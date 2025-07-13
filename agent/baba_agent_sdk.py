@@ -5,11 +5,23 @@ Baba Is You Agent using Claude Code SDK
 
 import asyncio
 import os
+import sys
+import toml
+from pathlib import Path
 from claude_code_sdk import query, ClaudeCodeOptions
 
 
-async def play_baba():
+async def play_baba(level_id="1"):
     """Play Baba Is You using Claude Code SDK with MCP server."""
+    
+    # Load configuration
+    config_path = Path(__file__).parent.parent / "config.toml"
+    if config_path.exists():
+        with open(config_path, "r") as f:
+            config = toml.load(f)
+        max_turns = config.get("agent", {}).get("max_turns", 50)
+    else:
+        max_turns = 50
     
     # Configure MCP server for Baba Is You
     mcp_config = {
@@ -21,7 +33,7 @@ async def play_baba():
     # Configure Claude Code options
     options = ClaudeCodeOptions(
         mcp_servers={"baba": mcp_config},
-        max_turns=50,  # Allow multiple turns for gameplay
+        max_turns=max_turns,  # Allow multiple turns for gameplay
         permission_mode='bypassPermissions',  # Bypass permissions for autonomous play
     )
     
@@ -65,14 +77,14 @@ You are playing Baba Is You, a puzzle game where you manipulate the rules themse
 - baba.undo_multiple: Undo n moves
 
 ## YOUR TASK:
-1. Enter level 1
+1. Enter level {level_id}
 2. Examine the board carefully - identify all text rules
 3. Plan which rules to break or create
 4. Execute your plan step by step
 5. Always think about: "What can I control?" and "How do I win?"
 
-Start by entering level 1. After each move, explain your reasoning and what rules are currently active.
-"""
+Start by entering level {level_id}. After each move, explain your reasoning and what rules are currently active.
+""".format(level_id=level_id)
     
     # Run the query and print responses
     message_count = 0
@@ -121,8 +133,23 @@ Start by entering level 1. After each move, explain your reasoning and what rule
 
 async def main():
     """Main entry point."""
+    # Load configuration for defaults
+    config_path = Path(__file__).parent.parent / "config.toml"
+    default_level = "1"
+    if config_path.exists():
+        with open(config_path, "r") as f:
+            config = toml.load(f)
+        default_level = config.get("agent", {}).get("default_level", "1")
+    
+    # Get level ID from command line arguments
+    level_id = default_level
+    if len(sys.argv) > 1:
+        level_id = sys.argv[1]
+    
+    print(f"Starting agent for level {level_id}")
+    
     try:
-        await play_baba()
+        await play_baba(level_id)
     except KeyboardInterrupt:
         print("\n\nGame interrupted by user")
     except Exception as e:

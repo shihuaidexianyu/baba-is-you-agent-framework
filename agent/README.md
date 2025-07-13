@@ -1,6 +1,6 @@
 # Baba Is You AI Agent
 
-An autonomous agent that plays Baba Is You using Claude AI and the MCP (Model Control Protocol) server.
+An autonomous agent that plays Baba Is You using Claude Code SDK and the MCP (Model Control Protocol) server.
 
 ## Features
 
@@ -8,93 +8,82 @@ An autonomous agent that plays Baba Is You using Claude AI and the MCP (Model Co
 - **MCP Integration**: Communicates with Baba Is You through the MCP server interface
 - **Game State Analysis**: Understands rules, win conditions, and possible moves
 - **Strategic Planning**: Plans moves to achieve level objectives
+- **Claude Code SDK**: Uses the official SDK for reliable Claude integration
 
-## Prerequisites
+## Quick Start
 
-1. **Baba Is You Game**: Purchase and install from Steam
-2. **Python 3.11+**: Required for the agent
-3. **Anthropic API Key**: Set as `ANTHROPIC_API_KEY` environment variable
-4. **Pixi**: For Python environment management
+If you haven't already set up the project, see the main README.md in the root directory.
 
-## Setup
-
-1. **Game Setup**:
-   ```bash
-   # Navigate to the game's Data folder and clone baba_is_eval there
-   # Run the setup script
-   cd baba_is_eval
-   chmod +x setup.sh
-   ./setup.sh
-   ```
-
-2. **Agent Setup**:
-   ```bash
-   # Install pixi dependencies
-   cd baba_agent
-   pixi install
-   
-   # Set your Anthropic API key
-   export ANTHROPIC_API_KEY="your-key-here"
-   ```
-
-## Usage
-
-### Method 1: Run MCP Server Separately
-
-1. Start the MCP server:
-   ```bash
-   cd baba_is_eval
-   mcp dev game_mcp.py
-   ```
-
-2. In another terminal, run the agent:
-   ```bash
-   cd baba_agent
-   pixi run python baba_agent.py
-   ```
-
-### Method 2: Agent Launches MCP Server
-
-The agent can also launch the MCP server automatically:
+To run the agent:
 ```bash
-cd baba_agent
-pixi run python baba_agent.py
+# From the root directory
+pixi run play 1  # Play level 1
 ```
 
-### Testing Connection
+## Architecture
 
-To test if everything is set up correctly:
-```bash
-pixi run python test_connection.py
-```
+### Main Components
 
-## How It Works
+- **baba_agent_sdk.py**: Main agent using Claude Code SDK
+  - Configures MCP server connection
+  - Sets up Claude with appropriate prompts
+  - Handles game session management
+  
+- **test_connection.py**: MCP connection tester
+  - Verifies MCP server is accessible
+  - Tests basic game operations
 
-1. **Game State Reading**: The MCP server reads the game state through modded Lua functions
-2. **State Analysis**: Claude analyzes the game board, identifying:
+### How It Works
+
+1. **MCP Server Launch**: The agent automatically starts the MCP server as a subprocess
+2. **Claude Integration**: Uses Claude Code SDK to connect to Claude API
+3. **Game Analysis**: Claude analyzes the game state and identifies:
    - Active rules (e.g., "BABA IS YOU", "FLAG IS WIN")
    - Controlled objects
    - Win conditions
-   - Possible rule changes
-3. **Move Planning**: Claude recommends movement commands based on the analysis
-4. **Execution**: The agent sends commands through MCP to control the game
+   - Possible rule modifications
+4. **Strategic Execution**: Claude executes moves to solve puzzles
 
-## Agent Architecture
+### Configuration
 
-- `BabaIsYouAgent`: Main agent class
-  - Connects to MCP server
-  - Manages game state
-  - Interfaces with Claude AI
-  - Executes game commands
+The agent reads configuration from `config.toml`:
+- `agent.max_turns`: Maximum turns Claude can take (default: 50)
+- `agent.default_level`: Default level to play if not specified
+- `agent.verbose`: Whether to show detailed output
 
-- Key Methods:
-  - `connect_to_mcp()`: Establishes MCP connection
-  - `analyze_game_state_with_claude()`: Gets AI analysis
-  - `play_level_autonomously()`: Plays a level without human intervention
+## Standalone Usage
+
+If you want to run the agent directly without the orchestration script:
+
+```bash
+cd agent
+python baba_agent_sdk.py 1  # Play level 1
+```
+
+## Development
+
+### Modifying the Agent Prompt
+
+Edit the prompt in `baba_agent_sdk.py` to change how Claude approaches the game. The prompt includes:
+- Game mechanics explanation
+- Available tools documentation
+- Strategic guidance
+
+### Testing MCP Connection
+
+```bash
+cd agent
+python test_connection.py
+```
+
+This will:
+1. Connect to the MCP server
+2. List available tools
+3. Test basic operations
 
 ## Troubleshooting
 
-- **MCP Connection Failed**: Ensure the game is running and focused
-- **No Game State**: Run setup.sh again and restart the game
+- **MCP Connection Failed**: Ensure the game is running and a level is loaded
+- **No Game State**: The game must be focused and in a level
 - **API Key Error**: Set your ANTHROPIC_API_KEY environment variable
-- **Game Not Responding**: Click on the game window to focus it
+- **Module Import Errors**: Run `pixi install` from the root directory

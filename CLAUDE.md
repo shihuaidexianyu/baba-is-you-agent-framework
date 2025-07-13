@@ -6,18 +6,26 @@ This project creates an autonomous agent that plays Baba Is You using the Claude
 
 ```
 baba-is-agi/
-├── baba_agent/           # Agent implementation
+├── agent/                # Agent implementation
 │   ├── baba_agent_sdk.py # Main agent using Claude Code SDK
 │   ├── test_connection.py # MCP connection tester
-│   ├── pixi.toml         # Python dependencies
+│   ├── pixi.toml         # Python dependencies (deprecated)
+│   ├── pixi.lock         # Pixi lock file
 │   └── README.md         # User documentation
-├── baba_is_eval/         # MCP server for game interface
-│   ├── game_mcp.py       # MCP server (no pyautogui)
+├── baba_is_eval/         # MCP server for game interface (git submodule)
+│   ├── game_mcp.py       # MCP server with pyautogui for some actions
 │   ├── io.lua            # Lua mod for game communication
 │   ├── help_rules.json   # Game rules documentation
 │   ├── setup.sh          # Installation script
 │   └── README.md         # Setup instructions
-└── CLAUDE.md             # This file
+├── scripts/              # Orchestration scripts
+│   ├── play_game.py      # Main orchestration script
+│   └── setup_game.py     # Setup script
+├── pixi.toml             # Root pixi configuration
+├── config.toml           # Game and agent configuration
+├── README.md             # Quick start guide
+├── CLAUDE.md             # This file
+└── MCP_IMPROVEMENTS.md   # MCP improvements documentation
 ```
 
 ## Architecture
@@ -30,10 +38,12 @@ baba-is-agi/
 5. **Agent ↔ Claude**: `baba_agent_sdk.py` orchestrates Claude to play the game
 
 ### Key Design Decisions
-- **No pyautogui**: All game control is programmatic through Lua commands
+- **Hybrid control**: Movement via Lua commands, some actions (enter, restart) use pyautogui
 - **State persistence**: Game state saved to INI file for reliable reading
 - **Command queue**: Numbered Lua files ensure proper command ordering
 - **MCP tools**: Clean interface for game actions (move, undo, restart, etc.)
+- **TOML configuration**: All paths and settings in `config.toml`
+- **Submodule architecture**: `baba_is_eval` is a git submodule for independent updates
 
 ## Running the Agent
 
@@ -41,26 +51,33 @@ baba-is-agi/
    - Baba Is You installed (Steam version tested)
    - Python 3.11+
    - `ANTHROPIC_API_KEY` environment variable set
+   - Pixi package manager installed
 
-2. **Setup**:
+2. **Setup** (one-time):
    ```bash
-   # Install baba_is_eval in game's Data folder
-   cd "/path/to/Baba Is You/Data"
-   git clone <repo> .
-   cd baba_is_eval
-   ./setup.sh
+   # Clone the repository with submodules
+   git clone --recursive https://github.com/femtomc/baba-is-agi.git
+   cd baba-is-agi
    
-   # Install agent dependencies
-   cd ../baba_agent
+   # Install dependencies
    pixi install
+   
+   # Run setup to configure game path and install mod
+   pixi run setup
    ```
 
 3. **Run**:
    ```bash
-   # Start Baba Is You game first
-   # Then run the agent
-   cd baba_agent
-   pixi run python baba_agent_sdk.py
+   # Play a specific level (automatically starts game, MCP server, and agent)
+   pixi run play 1  # Play level 1
+   pixi run play 5  # Play level 5
+   
+   # Play default level from config.toml
+   pixi run play
+   
+   # Advanced options
+   pixi run play 1 --no-game  # Don't start game (assume it's running)
+   pixi run play --mcp-only   # Only start MCP server
    ```
 
 ## MCP Tools Available
@@ -103,7 +120,7 @@ The agent should:
 
 ### Testing MCP Connection
 ```bash
-pixi run python test_connection.py
+pixi run test-mcp
 ```
 
 ### Modifying Agent Behavior
@@ -132,9 +149,9 @@ Edit the prompt in `baba_agent_sdk.py` to change how Claude approaches the game.
 - Ensure no syntax errors in Lua command files
 
 ### MCP connection fails
-- Check game path in `game_mcp.py` matches your installation
-- Verify all Python dependencies installed
-- Test with `test_connection.py` first
+- Check game path in `config.toml` matches your installation
+- Verify all Python dependencies installed with `pixi install`
+- Test with `pixi run test-mcp` first
 
 ## Performance Considerations
 
@@ -159,10 +176,26 @@ Edit the prompt in `baba_agent_sdk.py` to change how Claude approaches the game.
 - Keep agent prompts clear and structured
 - Test changes with `test_connection.py` first
 
-## Environment Variables
+## Configuration
 
+### Environment Variables
 - `ANTHROPIC_API_KEY`: Required for Claude API access
-- Game path can be configured in `config.yaml` (optional)
+
+### config.toml
+All game and agent settings are configured in `config.toml`:
+```toml
+[game]
+path = "/path/to/Baba Is You"
+
+[mcp]
+port = 5173
+host = "localhost"
+
+[agent]
+max_turns = 50
+default_level = "1"
+verbose = true
+```
 
 ## Security Notes
 
