@@ -13,6 +13,8 @@ Environments are designed to teach and challenge players with:
 - Advanced properties like SINK, HOT/MELT, etc.
 """
 
+import numpy as np
+
 from .grid import Grid
 from .registration import Registry
 
@@ -75,7 +77,7 @@ class Environment:
         Used when restarting a level after winning/losing.
 
         Returns:
-            The newly created grid
+            The newly created grid (observation)
         """
         self.grid = Grid(self.width, self.height, self.registry)
         self.setup()
@@ -85,21 +87,53 @@ class Environment:
 
         return self.grid
 
-    def step(self, action: str) -> tuple[Grid, bool, bool]:
+    def step(self, action: str) -> tuple[Grid, float, bool, dict]:
         """
-        Take a step in the environment.
+        Take a step in the environment (Gym-like API).
 
         Args:
-            action: Action to take
+            action: One of ["up", "down", "left", "right", "wait"]
 
         Returns:
-            (grid, won, lost) tuple
+            observation: Grid object with new state
+            reward: 1.0 if won, -1.0 if lost, 0.0 otherwise
+            done: True if episode is over (won or lost)
+            info: Dictionary with additional information
         """
+        # Take the action
         won, lost = self.grid.step(action)
-        return self.grid, won, lost
 
-    def render(self, cell_size: int = 24):
-        """Render the current state."""
+        # Compute reward
+        reward = 0.0
+        if won:
+            reward = 1.0
+        elif lost:
+            reward = -1.0
+
+        # Episode is done if won or lost
+        done = won or lost
+
+        # Additional info
+        info = {
+            "won": won,
+            "lost": lost,
+            "steps": self.grid.steps,
+            "rules": [str(rule) for rule in self.grid.rule_manager.rules],
+        }
+
+        return self.grid, reward, done, info
+
+    def render(self, mode: str = "rgb_array", cell_size: int = 24) -> np.ndarray:  # noqa: ARG002
+        """
+        Render the current state.
+
+        Args:
+            mode: Rendering mode ("rgb_array" returns numpy array)
+            cell_size: Size of each cell in pixels
+
+        Returns:
+            RGB image as numpy array
+        """
         return self.grid.render(cell_size)
 
     def get_state(self):

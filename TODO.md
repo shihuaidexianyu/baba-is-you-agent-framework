@@ -65,10 +65,28 @@ Successfully implemented all 120+ Baba Is You objects, fixed the rule creation s
 
 ### Remaining Tasks
 
-1. **Update Documentation**
+1. **Implement Claude Code Agent**
+   - Create working agent under `/agents/claude_code.py`
+   - Should use Claude API to play Baba Is You
+   - Integrate with the Agent framework
+
+2. **Refactor Agent/EpisodePlayer Architecture** ✅ DONE
+   - Created Gym-like Environment API (reset, step, render)
+   - Created new Agent base class with built-in play_episode() and play_episodes()
+   - Agents now only need to implement get_action(observation)
+   - Clean separation of concerns: Environment manages game state, Agent makes decisions
+
+3. **Clean Up Deprecated Files**
+   - Remove EpisodePlayer class (functionality now in Agent base class)
+   - Remove old agent.py and envs.py files
+   - Update all imports to use new architecture
+   - Update play.py and scripts to use new API
+
+4. **Update Documentation**
    - Document all new objects and their properties
    - Update examples to use new objects
    - Create object reference guide
+   - Document new Agent/Environment API
 
 ### Future Enhancements
 

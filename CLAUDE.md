@@ -28,9 +28,12 @@ When in doubt, choose simplicity over compatibility. This is research code that 
 Python implementation of Baba Is You designed for building AI agents. The project includes:
 - Complete game engine with rule manipulation mechanics
 - 14 pre-built environments of varying difficulty
-- Agent framework for building autonomous players
+- Clean Agent API with built-in episode management
+- Gym-like Environment interface for easy integration
 - Visual rendering with Pygame
 - Managed with Pixi for consistent environments across platforms
+
+**Key Design Principle:** The API is designed to be extremely simple for agent developers. You only implement `get_action()`, and the framework handles everything else (rendering, recording, statistics, etc.)
 
 ## Key Technical Details
 
@@ -54,14 +57,13 @@ pixi run install-dev       # Install package in editable mode
 ```bash
 # Core functionality
 pixi run play              # Play the game interactively
+pixi run play --env maze   # Play a specific environment
 pixi run test              # Run test suite
 
 # Agent tasks
-pixi run agent             # Run the default agent
-pixi run agent-visual      # Run agent with GUI visualization
-pixi run agent-local       # Run local autonomous agent
-pixi run agent-api         # Run Claude API agent (requires key)
-pixi run watch-agent       # Watch agent play (legacy)
+pixi run agent-random      # Run random agent
+pixi run agent-demo        # Run demo agent (greedy pathfinding)
+pixi run agent-claude      # Run Claude API agent (requires key)
 
 # Environment and sprites
 pixi run list-envs         # List all available environments
@@ -105,9 +107,10 @@ baba-is-agi/
 │   ├── sprite_loader.py  # Loads official sprites if available
 │   ├── envs.py           # All game environments (14 total)
 │   └── assets/sprites/   # Directory for official game sprites (gitignored)
-├── agent/                # Agent implementations
-│   ├── baba_agent.py     # All agent types in single module
-│   └── README.md         # Agent documentation
+├── agents/               # Agent implementations
+│   ├── random_agent.py   # Simple random agent
+│   ├── demo_agent.py     # Greedy pathfinding agent
+│   └── claude_code_agent.py # Claude API agent
 ├── scripts/              # Utility scripts
 └── pixi.toml            # Dependency management
 ```
@@ -128,20 +131,42 @@ To set up official sprites (only for users who own the game):
 pixi run setup-sprites
 ```
 
-### Environment Interface
+### Environment Interface (Gym-like API)
 
-The game environments follow a custom interface (not OpenAI Gym):
-- `env.reset()` returns a Grid object
-- `env.step(action)` takes string actions ("up", "down", "left", "right")
-- `env.step()` returns tuple: (grid, won, lost)
-- The Grid object has methods like `render()` and properties like `rule_manager`
+The game environments follow a Gym-like interface:
+- `env.reset()` returns a Grid object (the observation)
+- `env.step(action)` takes string actions ("up", "down", "left", "right", "wait")
+- `env.step()` returns tuple: (observation, reward, done, info)
+  - observation: Grid object with current state
+  - reward: 1.0 if won, -1.0 if lost, 0.0 otherwise
+  - done: True if episode is over (won or lost)
+  - info: Dict with additional information (won, lost, steps, rules)
+- `env.render(mode="rgb_array")` returns numpy array of the visual state
 
 ### Agent Development
 
-When developing agents:
-- Use `Property` enum from `properties.py` for rule checking
-- Access grid cells with `grid.grid[y][x]` (returns set of Objects)
-- Check properties with `grid.rule_manager.has_property(obj_name, Property.YOU)`
+**Simple Agent Interface:**
+Agents only need to implement one method:
+```python
+from baba.agent import Agent
+from baba.grid import Grid
+
+class MyAgent(Agent):
+    def get_action(self, observation: Grid) -> str:
+        # Your logic here
+        return "up"  # or "down", "left", "right", "wait"
+```
+
+**Built-in Agent Methods:**
+- `agent.play_episode(env, render=True)` - Play one episode
+- `agent.play_episodes(env, num_episodes=100)` - Play multiple episodes
+- Recording, rendering, and stats are handled automatically!
+
+**Accessing Game State:**
+- Use `observation.rule_manager.get_you_objects()` to find controllable objects
+- Use `observation.rule_manager.get_win_objects()` to find win objects
+- Access grid cells with `observation.grid[y][x]` (returns set of Objects)
+- Check properties with `observation.rule_manager.has_property(obj_name, Property.YOU)`
 - Text objects have `is_text = True`
 
 ### Common Pitfalls
@@ -156,8 +181,8 @@ When developing agents:
 To test the game:
 ```bash
 pixi run play           # Play interactively
-pixi run agent-local    # Watch autonomous AI play
-pixi run agent-visual   # Watch AI with GUI visualization
+pixi run agent-random   # Watch random agent play
+pixi run agent-demo     # Watch demo agent solve simple levels
 pixi run list-envs      # See all available environments
 pixi run test           # Run test suite
 ```

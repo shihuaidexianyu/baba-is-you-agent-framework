@@ -10,7 +10,6 @@ import sys
 
 from .agent import UserAgent
 from .envs import create_environment, list_environments
-from .episode_player import EpisodePlayer
 
 
 def play(
@@ -43,18 +42,16 @@ def play(
     # Create user agent for interactive play
     agent = UserAgent()
 
-    # Create episode player
-    player = EpisodePlayer(
+    # Play episode using new Agent API
+    stats = agent.play_episode(
         env=env,
-        agent=agent,
         render=render,
         cell_size=cell_size,
         fps=fps,
         verbose=verbose,
     )
 
-    # Play one episode
-    return player.play_episodes(1)
+    return stats
 
 
 def main():
@@ -82,30 +79,51 @@ For AI agents, see the agents/ directory:
     parser.add_argument(
         "--env",
         default="simple",
-        choices=list_environments(),
         help="Environment to play (default: simple)",
     )
 
     parser.add_argument(
-        "--cell-size", type=int, default=48, help="Size of each cell in pixels (default: 48)"
+        "--cell-size",
+        type=int,
+        default=48,
+        help="Size of each cell in pixels (default: 48)",
     )
 
-    parser.add_argument("--fps", type=int, default=30, help="Frames per second (default: 30)")
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=30,
+        help="Frames per second (default: 30)",
+    )
 
-    parser.add_argument("--quiet", action="store_true", help="Disable verbose output")
+    parser.add_argument(
+        "--list-envs",
+        action="store_true",
+        help="List available environments and exit",
+    )
 
     args = parser.parse_args()
 
-    # Play the game
-    stats = play(
-        env_name=args.env,
-        render=True,
-        cell_size=args.cell_size,
-        fps=args.fps,
-        verbose=not args.quiet,
-    )
+    # Handle list environments
+    if args.list_envs:
+        print("Available environments:")
+        for env_name in sorted(list_environments()):
+            print(f"  - {env_name}")
+        return 0
 
-    return 0 if stats.get("wins", 0) > 0 else 1
+    # Play the game
+    try:
+        play(
+            env_name=args.env,
+            render=True,
+            cell_size=args.cell_size,
+            fps=args.fps,
+            verbose=True,
+        )
+    except KeyboardInterrupt:
+        print("\nGame interrupted by user")
+
+    return 0
 
 
 if __name__ == "__main__":

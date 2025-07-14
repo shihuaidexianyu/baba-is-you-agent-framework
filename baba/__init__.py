@@ -5,8 +5,9 @@ Baba Is You - Python implementation for AI agent development.
 # Core functionality
 # Agent system
 from .agent import Agent, UserAgent
+
+# Environment system
 from .envs import create_environment, list_environments
-from .episode_player import EpisodePlayer
 from .grid import Grid
 from .play import main as play_main
 
@@ -52,7 +53,6 @@ __all__ = [
     # Agents
     "Agent",
     "UserAgent",
-    "EpisodePlayer",
     # Play
     "play",
     "play_main",

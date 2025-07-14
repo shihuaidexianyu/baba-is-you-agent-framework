@@ -12,9 +12,9 @@ install = "pip install -e ."
 install-agent = "pip install -e .[agent]"
 
 # Playing the game
-play = "python scripts/play_game.py"
-play-manual = "python scripts/play_manual.py"
-play-claude = "python scripts/play_game.py --agent claude"
+play = "python -m baba.play"
+play-manual = "python -m baba.play"
+play-env = "python -m baba.play --env"
 
 # Testing
 test = "python -m pytest tests/"
@@ -40,6 +40,11 @@ list-envs = "python scripts/list_environments.py"
 setup-sprites = "python scripts/setup_sprites.py"
 demo-sprites = "python scripts/demo_sprites.py"
 sprite-showcase = "python scripts/sprite_showcase.py"
+
+# Agent tasks
+agent-random = "python agents/random_agent.py"
+agent-demo = "python agents/demo_agent.py"
+agent-claude = "python agents/claude_code_agent.py"
 
 # Development tasks
 example-agent = "python scripts/example_agent.py"
