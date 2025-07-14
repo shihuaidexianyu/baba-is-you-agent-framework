@@ -26,18 +26,18 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 <table>
 <tr>
 <th align="center">Puzzle</th>
-<th align="center">Demo Agent (Greedy Pathfinding)</th>
+<th align="center">Demo Agent (BFS Pathfinding)</th>
 <th align="center">Claude Code Agent (AI with Reasoning)</th>
 </tr>
 <tr>
 <td align="center"><b>Simple</b></td>
-<td align="center">✅ Solves easily<br/><i>Direct path to goal</i></td>
-<td align="center"><img src="docs/gameplay_claude_simple_reasoning.gif" width="320"><br/>✅ Solves in 8 steps<br/><i>Shows reasoning: "move toward flag"</i></td>
+<td align="center"><img src="docs/gameplay_simple_demo.gif" width="320"><br/>✅ Solves in 6 steps<br/><i>Shows: "Moving right toward goal"</i></td>
+<td align="center"><img src="docs/gameplay_simple_claude.gif" width="320"><br/>✅ Solves in 6 steps<br/><i>Shows reasoning: "Direct path to flag"</i></td>
 </tr>
 <tr>
 <td align="center"><b>Push Puzzle</b></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="320"><br/>❌ Gets stuck immediately<br/><i>Tries to move through rocks</i></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="320"><br/>🔄 Attempts multiple strategies<br/><i>Pushes rocks, explores alternatives</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="320"><br/>⚠️ Pushes rocks but gets stuck<br/><i>BFS can't consider rule changes</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="320"><br/>🔄 Explores complex strategies<br/><i>Reasons about rules and mechanics</i></td>
 </tr>
 </table>
 
