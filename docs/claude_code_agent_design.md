@@ -171,14 +171,30 @@ Active Rules:
   FLAG IS WIN
   WALL IS STOP
 
-YOU control: baba
-WIN objects: flag
-PUSH objects: rock
-STOP objects: wall
+YOU control: BABA
+WIN objects: FLAG
+PUSH objects: ROCK
+STOP objects: WALL
 
-Grid (lowercase=objects, UPPERCASE=text):
-bab  .  roc  .  roc  .  roc  .  .  fla
-[... rest of grid ...]
+Grid Layout:
+- Empty cells: .
+- Objects (game pieces): lowercase (e.g., baba, rock, flag)
+- Text (rule pieces): UPPERCASE (e.g., BABA, IS, YOU)
+
+       0         1         2         3         4         5         6         7         8         9     
+   ----------------------------------------------------------------------------------------------------
+0|     .        BABA       IS       YOU        .        ROCK       IS       PUSH       .         .
+1|     .         .         .         .         .         .         .         .         .         .
+2|     .         .        wall      wall      wall      wall      wall      wall      wall       .
+3|     .         .        wall       .         .         .         .         .        wall       .
+4|     .        baba       .        rock       .        rock       .        rock       .        flag
+5|     .         .        wall       .         .         .         .         .        wall       .
+6|     .         .        wall      wall      wall      wall      wall      wall      wall       .
+7|     .        FLAG       IS       WIN        .        WALL       IS       STOP       .         .
+
+Objects in grid:
+  Game objects: baba, flag, rock, wall
+  Text objects: BABA, FLAG, IS, PUSH, ROCK, STOP, WALL, WIN, YOU
 
 Key positions:
   baba (YOU) at (1,4)
@@ -218,21 +234,32 @@ Next move as JSON:
 
 ### Example Claude Responses
 
+With the improved grid representation, Claude now provides more specific reasoning:
+
+```json
+Step 1: {"action": "right", "reasoning": "Move baba right toward flag at (8,5)"}
+Step 2: {"action": "right", "reasoning": "push rock at (3,4) right to clear path"}
+Step 3: {"action": "right", "reasoning": "push rock at (8,4) to move it and reach flag underneath at (9,4)"}
+Step 14: {"action": "down", "reasoning": "move down to potentially manipulate the FLAG IS WIN rule text"}
 ```
-Step 1: {"action": "right", "reasoning": "move toward flag"}
-Step 2: {"action": "right", "reasoning": "push first rock right"}
-Step 3: {"action": "up", "reasoning": "try alternate path around rocks"}
-```
+
+Claude can now:
+- Reference exact coordinates
+- Identify when objects might be overlapping
+- Consider rule manipulation as an alternative strategy
 
 ## Key Design Decisions
 
 1. **Text-Based Representation**: Makes game state interpretable by language models
-2. **Explicit Rule Communication**: Clearly states win conditions and mechanics
-3. **JSON Response Format**: Structured output for reliable parsing
-4. **Reasoning Requirement**: Provides insight into agent's decision process
-5. **Conversation Continuity**: Uses `continue_conversation` for efficiency
-6. **Timeout Protection**: 30-second limit prevents infinite waiting
-7. **Graceful Fallbacks**: Multiple strategies if response parsing fails
+2. **Full Object Names**: No truncation - shows complete names like `baba`, `rock`, `flag`
+3. **Coordinate System**: Row/column numbers make positions unambiguous
+4. **Clear Object/Text Distinction**: Lowercase for objects, UPPERCASE for text
+5. **Explicit Rule Communication**: Clearly states win conditions and mechanics
+6. **JSON Response Format**: Structured output for reliable parsing
+7. **Reasoning Requirement**: Provides insight into agent's decision process
+8. **Conversation Continuity**: Uses `continue_conversation` for efficiency
+9. **Timeout Protection**: 30-second limit prevents infinite waiting
+10. **Graceful Fallbacks**: Multiple strategies if response parsing fails
 
 ## Limitations and Considerations
 
