@@ -2,11 +2,14 @@
 
 A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
 
+> **⚠️ Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
+
 ## Features
 
 - Complete game engine with dynamic rule system
 - 120+ objects from the original game
-- Level loader for official Baba Is You levels
+- Custom ASCII-based sprites (always available)
+- Level loader for official Baba Is You levels (requires game ownership)
 - Multiple agent implementations (random, local search, Claude API)
 - 14 built-in environments of varying difficulty
 
@@ -20,12 +23,19 @@ curl -fsSL https://pixi.sh/install.sh | bash
 pixi install
 ```
 
-### Optional: Official Sprites
+### Optional: Official Game Content (Requires Game Ownership)
 
-If you own Baba Is You on Steam:
+**⚠️ IMPORTANT**: The following features require you to own Baba Is You on Steam:
+- Loading official game sprites
+- Loading official level files (.l format)
+
+If you own the game on Steam:
 ```bash
-pixi run python scripts/setup_sprites.py
+# Copy official sprites from your Steam installation
+pixi run setup-sprites
 ```
+
+The game will automatically use custom ASCII sprites if official sprites are not available.
 
 ## Quick Start
 
@@ -52,13 +62,20 @@ pixi run python agent/baba_agent.py --agent-type claude
 
 ### Load Official Levels
 
+**⚠️ Requires game ownership**: This feature only works if you own Baba Is You on Steam.
+
 ```python
 from baba.level_loader import LevelLoader
 from baba.registration import Registry
 
-loader = LevelLoader()
+loader = LevelLoader()  # Automatically finds Steam installation
 registry = Registry()
-grid = loader.load_level("baba", 0, registry)
+
+# Load level from official game files
+try:
+    grid = loader.load_level("baba", 0, registry)
+except FileNotFoundError:
+    print("Official levels not found. Please own the game on Steam.")
 ```
 
 ## Creating Agents
@@ -122,10 +139,18 @@ The codebase is extensively documented with detailed inline comments explaining:
 - Agent development patterns
 
 Additional documentation:
-- [Level Format](docs/level_format_analysis.md) - Official .l file structure
-- [Level Loader](docs/level_loader_documentation.md) - Loading Baba Is You levels
+- [Level Format](docs/level_format_analysis.md) - Official .l file structure (for reference)
+- [Level Loader](docs/level_loader_documentation.md) - Loading official levels (requires game)
 - [Object Reference](docs/object_reference.md) - Complete object listing
+
+## Copyright Notice
+
+**Baba Is You** is a game by Arvi "Hempuli" Teikari. This project is an independent implementation for AI research purposes.
+
+- **Game Content**: Official sprites and level files are copyrighted material. You must own Baba Is You to use these features.
+- **This Project**: The Python implementation and AI agents are independent work, not affiliated with or endorsed by Hempuli.
+- **Custom Assets**: This project includes custom ASCII-based sprites as an alternative to official game assets.
 
 ## License
 
-Based on [baba-is-ai](https://github.com/nacloos/baba-is-ai).
+This implementation is based on [baba-is-ai](https://github.com/nacloos/baba-is-ai).
