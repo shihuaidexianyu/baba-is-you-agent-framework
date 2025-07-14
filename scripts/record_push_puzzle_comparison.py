@@ -45,22 +45,22 @@ def main():
     print("=== Recording Push Puzzle Comparison ===")
     print("This will show how different agents handle pushing mechanics.")
 
-    # Record demo agent (will get stuck quickly)
+    # Record demo agent
     demo_agent = DemoAgent()
     demo_stats = record_agent(
         demo_agent,
         "push_puzzle",
         "docs/gameplay_push_puzzle_demo_stuck.gif",
-        max_steps=15,  # Short recording since it gets stuck
+        max_steps=20,  # Same steps for both agents
     )
 
-    # Record Claude Code agent (should understand pushing)
+    # Record Claude Code agent
     claude_agent = ClaudeCodeAgent(verbose=True)
     claude_stats = record_agent(
         claude_agent,
         "push_puzzle",
         "docs/gameplay_push_puzzle_claude.gif",
-        max_steps=50,  # More steps for solving
+        max_steps=20,  # Same steps for both agents
     )
 
     print("\n=== Summary ===")

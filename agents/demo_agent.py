@@ -16,12 +16,12 @@ class DemoAgent(Agent):
     def __init__(self):
         super().__init__("Demo Agent")
         self.path_cache = {}  # Cache paths between episodes
-        self.last_reasoning = "Using pathfinding"  # For UI consistency
+        self.last_reasoning = ""  # Empty for UI consistency (demo agent doesn't "think")
 
     def reset(self):
         """Reset the agent for a new episode."""
         self.path_cache = {}
-        self.last_reasoning = "Using pathfinding"
+        self.last_reasoning = ""  # Empty for UI consistency
 
     def get_action(self, observation: Grid) -> str:
         """
@@ -54,23 +54,8 @@ class DemoAgent(Agent):
         # Try simple pathfinding with push awareness
         action = self._simple_pathfind_with_push(observation, you_pos, target_pos)
 
-        # Update reasoning based on action
-        if action == "wait":
-            self.last_reasoning = "No path found"
-        else:
-            # Check if we're pushing something
-            directions = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
-            dx, dy = directions[action]
-            new_x, new_y = you_pos[0] + dx, you_pos[1] + dy
-
-            if 0 <= new_x < observation.width and 0 <= new_y < observation.height:
-                push_objects = {obj.lower() for obj in observation.rule_manager.get_push_objects()}
-                for obj in observation.grid[new_y][new_x]:
-                    if not obj.is_text and obj.name.lower() in push_objects:
-                        self.last_reasoning = f"Pushing {obj.name} {action}"
-                        return action
-
-            self.last_reasoning = f"Moving {action} toward goal"
+        # Keep reasoning empty - demo agent doesn't "think"
+        self.last_reasoning = ""
 
         return action
 
