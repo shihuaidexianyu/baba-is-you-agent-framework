@@ -21,6 +21,28 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 </tr>
 </table>
 
+### Agent Comparison
+
+<table>
+<tr>
+<th align="center">Puzzle</th>
+<th align="center">Demo Agent (Greedy Pathfinding)</th>
+<th align="center">Claude Code Agent (AI with Reasoning)</th>
+</tr>
+<tr>
+<td align="center"><b>Simple</b></td>
+<td align="center">✅ Solves easily<br/><i>Direct path to goal</i></td>
+<td align="center"><img src="docs/gameplay_claude_simple_reasoning.gif" width="320"><br/>✅ Solves in 8 steps<br/><i>Shows reasoning: "move toward flag"</i></td>
+</tr>
+<tr>
+<td align="center"><b>Push Puzzle</b></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="320"><br/>❌ Gets stuck immediately<br/><i>Tries to move through rocks</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="320"><br/>🔄 Attempts multiple strategies<br/><i>Pushes rocks, explores alternatives</i></td>
+</tr>
+</table>
+
+The comparison shows how different agent architectures handle varying puzzle complexity. The demo agent uses simple pathfinding while the Claude Code agent can reason about game mechanics and display its thinking process in the UI.
+
 > **⚠️ Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
 
 ## Features

@@ -101,11 +101,13 @@ class Agent(ABC):
         done = False
         total_reward = 0.0
         steps = 0
+        start_time = pygame.time.get_ticks() if render else 0
 
         while not done and steps < max_steps:
             # Render if enabled
             if render:
-                self._render_frame(screen, env, obs, font, cell_size)
+                elapsed_time = (pygame.time.get_ticks() - start_time) / 1000.0
+                self._render_frame(screen, env, obs, font, cell_size, elapsed_time)
                 if record:
                     frames.append(self._capture_frame(screen))
                 clock.tick(fps)
@@ -211,7 +213,9 @@ class Agent(ABC):
 
         return stats
 
-    def _render_frame(self, screen, env, obs: Grid, font, cell_size: int):
+    def _render_frame(
+        self, screen, env, obs: Grid, font, cell_size: int, elapsed_time: float = 0.0
+    ):
         """Render a single frame."""
         # Clear screen
         screen.fill((0, 0, 0))
@@ -232,7 +236,7 @@ class Agent(ABC):
             status_text = "YOU LOSE!"
             color = (255, 0, 0)
         else:
-            status_text = f"Steps: {obs.steps}"
+            status_text = f"Steps: {obs.steps} | Time: {elapsed_time:.1f}s"
             color = (255, 255, 255)
 
         status_text += f" | Agent: {self.name}"

@@ -63,11 +63,11 @@ class ClaudeCodeAgent(Agent):
         """Ask Claude Code for the next action given the game state."""
         # Build minimal prompt for speed
         if self.episode_steps == 1:
-            prompt = f"""Baba Is You puzzle game. Choose your move.
+            prompt = f"""Baba Is You puzzle. Remember: YOU must touch WIN to win. You can push objects.
 
 {state_description}
 
-Respond with only this JSON format:
+What's your move? Respond with only JSON:
 {{"action": "right", "reasoning": "move toward flag"}}
 
 Your JSON response: """
@@ -80,14 +80,14 @@ Next move as JSON: """
         # Use continue_conversation after first message
         options = ClaudeCodeOptions(
             max_turns=1,
-            system_prompt='You are an AI playing Baba Is You. ALWAYS respond with only valid JSON in this exact format: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right. Nothing else.',
+            system_prompt='You are playing Baba Is You. To win: move YOUR object to touch a WIN object. You can push objects and text. Pushing text changes rules. ALWAYS respond with only valid JSON: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right.',
             continue_conversation=self.session_active,
             permission_mode="bypassPermissions",  # No prompts during game
         )
 
         response = ""
         start_time = time.time()
-        timeout = 10.0  # 10 second timeout per move
+        timeout = 30.0  # 30 second timeout per move (more time for complex puzzles)
 
         try:
             async for message in query(prompt=prompt, options=options):
@@ -195,31 +195,68 @@ Next move as JSON: """
         return action
 
     def _describe_state(self, grid: Grid) -> str:
-        """Convert game grid to text description - ultra concise."""
+        """Convert game grid to clear text description."""
         lines = []
 
-        # Compact grid visualization
-        lines.append("Grid:")
+        # Important game mechanics reminder
+        lines.append("GAME RULES: To win, YOU must touch an object that IS WIN.")
+        lines.append("You can push objects and text. Pushing text can change rules.")
+        lines.append("")
+
+        # Current rules
+        lines.append("Active Rules:")
+        for rule in grid.rule_manager.rules:
+            lines.append(f"  {rule}")
+
+        # What YOU control and what is WIN
+        you_objects = grid.rule_manager.get_you_objects()
+        win_objects = grid.rule_manager.get_win_objects()
+        push_objects = grid.rule_manager.get_push_objects()
+        stop_objects = grid.rule_manager.get_stop_objects()
+
+        lines.append("")
+        lines.append(f"YOU control: {', '.join(you_objects) if you_objects else 'nothing'}")
+        lines.append(f"WIN objects: {', '.join(win_objects) if win_objects else 'nothing'}")
+        lines.append(f"PUSH objects: {', '.join(push_objects) if push_objects else 'nothing'}")
+        lines.append(f"STOP objects: {', '.join(stop_objects) if stop_objects else 'nothing'}")
+
+        # Grid with clear labels
+        lines.append("\nGrid (lowercase=objects, UPPERCASE=text):")
+
+        # Build a more detailed grid
         for y in range(grid.height):
-            row = []
+            row_str = ""
             for x in range(grid.width):
                 cell_objs = list(grid.grid[y][x])
                 if not cell_objs:
-                    row.append(".")
+                    row_str += ".  "
                 else:
-                    obj = cell_objs[0]
-                    if obj.is_text:
-                        row.append(obj.name[0].upper())
-                    else:
-                        row.append(obj.name[0].lower())
-            lines.append("".join(row))
+                    # Show all objects in cell
+                    obj_names = []
+                    for obj in cell_objs:
+                        if obj.is_text:
+                            obj_names.append(obj.name.upper()[:3])
+                        else:
+                            obj_names.append(obj.name.lower()[:3])
+                    row_str += obj_names[0].ljust(3)
+            lines.append(row_str.rstrip())
 
-        # Key info only
-        you_objects = grid.rule_manager.get_you_objects()
-        win_objects = grid.rule_manager.get_win_objects()
+        # Object positions
+        lines.append("\nKey positions:")
 
-        lines.append(f"YOU: {you_objects[0] if you_objects else 'none'}")
-        lines.append(f"WIN: {win_objects[0] if win_objects else 'none'}")
+        # Find YOU positions
+        for y in range(grid.height):
+            for x in range(grid.width):
+                for obj in grid.grid[y][x]:
+                    if not obj.is_text and obj.name.lower() in [o.lower() for o in you_objects]:
+                        lines.append(f"  {obj.name} (YOU) at ({x},{y})")
+
+        # Find WIN positions
+        for y in range(grid.height):
+            for x in range(grid.width):
+                for obj in grid.grid[y][x]:
+                    if not obj.is_text and obj.name.lower() in [o.lower() for o in win_objects]:
+                        lines.append(f"  {obj.name} (WIN) at ({x},{y})")
 
         return "\n".join(lines)
 
