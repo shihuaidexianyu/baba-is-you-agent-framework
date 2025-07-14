@@ -10,7 +10,7 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 <tr>
 <th align="center">Puzzle</th>
 <th align="center">Demo Agent (BFS Pathfinding)</th>
-<th align="center">Claude Code Agent (AI with Reasoning)</th>
+<th align="center">Claude Code Agent (<a href="docs/claude_code_agent_design.md">AI with Reasoning</a>)</th>
 </tr>
 <tr>
 <td align="center"><b>Simple</b></td>
