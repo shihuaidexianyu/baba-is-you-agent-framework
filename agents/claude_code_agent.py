@@ -80,6 +80,7 @@ Next move as JSON: """
         # Use continue_conversation after first message
         options = ClaudeCodeOptions(
             max_turns=1,
+            model="claude-opus-4-20250514",  # Use Claude 4 Opus (latest model)
             system_prompt='You are playing Baba Is You. To win: move YOUR object to touch a WIN object. You can push objects and text. Pushing text changes rules. ALWAYS respond with only valid JSON: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right.',
             continue_conversation=self.session_active,
             permission_mode="bypassPermissions",  # No prompts during game
