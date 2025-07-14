@@ -2,7 +2,7 @@
 
 A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
 
-![Baba Is You Gameplay](docs/gameplay_simple.gif)
+![Baba Is You Gameplay](docs/gameplay_demo.gif)
 
 > **⚠️ Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
 
@@ -12,7 +12,8 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 - 120+ objects from the original game
 - Custom ASCII-based sprites (always available)
 - Level loader for official Baba Is You levels (requires game ownership)
-- Clean agent system: UserAgent (human) and ClaudeCodeAgent (AI)
+- Gym-like environment API for easy integration
+- Simple agent interface - just implement `get_action()`
 - 14 built-in environments of varying difficulty
 
 ## Installation
@@ -49,17 +50,20 @@ pixi run play
 
 Controls: Arrow keys/WASD to move, R to reset, Q to quit
 
-### Play with AI Agent
+### Play with AI Agents
 
 ```bash
-# Watch Claude play (requires ANTHROPIC_API_KEY)
-pixi run play --agent claude
+# Watch a random agent play
+pixi run agent
 
-# Run Claude on a specific level
-pixi run play --env push_puzzle --agent claude
+# Run agents with visualization
+pixi run agent-visual
 
-# Run multiple episodes without rendering
-pixi run play --agent claude --episodes 10 --no-render
+# Run Claude Code agent (requires ANTHROPIC_API_KEY)
+pixi run agent-api
+
+# List all available environments
+pixi run list-envs
 ```
 
 ### Load Official Levels
@@ -82,25 +86,48 @@ except FileNotFoundError:
 
 ## Creating Custom Agents
 
+The project uses a Gym-like API, making it easy to create agents:
+
 ```python
-from baba import Agent, make, EpisodePlayer
+from baba import Agent, make
 
 class MyAgent(Agent):
     def __init__(self):
         super().__init__("My Custom Agent")
         
-    def get_action(self, grid):
+    def get_action(self, observation):
         # Analyze grid state and return action
-        # Options: "up", "down", "left", "right", "wait"
+        # observation is a Grid object with game state
+        # Return one of: "up", "down", "left", "right", "wait"
         return "right"
 
-# Use your agent
+# Create environment and agent
 env = make("simple")
 agent = MyAgent()
 
-# Play episodes
-player = EpisodePlayer(env, agent)
-won, lost, steps = player.play_episode()
+# Play one episode with visualization
+stats = agent.play_episode(env, render=True)
+print(f"Won: {stats['won']}, Steps: {stats['steps']}")
+
+# Or play many episodes for evaluation
+stats = agent.play_episodes(env, num_episodes=100, render=False)
+print(f"Win rate: {stats['win_rate']*100:.1f}%")
+```
+
+### Environment API (Gym-like)
+
+```python
+# Reset environment
+obs = env.reset()  # Returns Grid object
+
+# Take a step
+obs, reward, done, info = env.step("right")
+# reward: 1.0 (win), -1.0 (loss), 0.0 (otherwise)
+# done: True if episode ended
+# info: dict with 'won', 'lost', 'steps'
+
+# Render current state
+img = env.render()  # Returns RGB array
 ```
 
 ## Game Rules
@@ -121,7 +148,7 @@ baba-is-agi/
 │   ├── rule.py         # Rule parsing system
 │   ├── world_object.py # Game objects
 │   └── envs.py         # Pre-built environments
-├── agent/              # AI agent implementations
+├── agents/             # Example agent implementations
 ├── scripts/            # Utility scripts
 ├── tests/              # Comprehensive test suite (102 tests)
 └── docs/               # Documentation
@@ -140,7 +167,7 @@ Advanced:
 - `transform_puzzle` - Use transformations
 - `rule_chain` - Complex rule sequences
 
-List all with: `pixi run python scripts/list_environments.py`
+List all with: `pixi run list-envs`
 
 ## Documentation
 
