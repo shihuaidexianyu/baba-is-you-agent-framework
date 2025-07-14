@@ -4,22 +4,7 @@
 
 A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
 
-<table>
-<tr>
-<td align="center">
-<img src="docs/gameplay_demo.gif" width="240"><br/>
-<b>Game Demo</b><br/>
-<i>Classic Baba Is You gameplay</i>
-</td>
-<td align="center">
-<img src="docs/gameplay_claude_simple_reasoning.gif" width="240"><br/>
-<b>AI Agent with Reasoning</b><br/>
-<i>Claude Code agent showing its thinking process</i>
-</td>
-</tr>
-</table>
-
-### Agent Comparison
+## Agent Comparison
 
 <table>
 <tr>
