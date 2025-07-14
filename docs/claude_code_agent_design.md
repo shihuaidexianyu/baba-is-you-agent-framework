@@ -90,16 +90,31 @@ STOP objects: wall
 ### 4. Grid Representation
 
 ```
-Grid (lowercase=objects, UPPERCASE=text):
-bab  .  .  .  .  .  .  .  .  fla
-.    .  .  .  .  .  .  .  .  .
-walwalwalwalwalwalwalwalwal.  .
+Grid Layout:
+- Empty cells: .
+- Objects (game pieces): lowercase (e.g., baba, rock, flag)
+- Text (rule pieces): UPPERCASE (e.g., BABA, IS, YOU)
+
+     0     1     2     3     4     5     6     7     8     9  
+   -------------------------------------------------------------
+0| BABA   IS   YOU    .     .     .     .     .     .     .
+1|  .     .     .     .     .     .     .     .     .     .
+2| wall  wall  wall  wall  wall  wall  wall  wall  wall   .
+3|  .     .     .     .     .     .     .     .    wall   .
+4| baba   .   rock   .   rock   .   rock   .     .   flag
+5|  .     .     .     .     .     .     .     .    wall   .
+6| wall  wall  wall  wall  wall  wall  wall  wall  wall   .
+7| FLAG   IS   WIN    .   WALL   IS   STOP   .     .     .
+
+Objects in grid:
+  Game objects: baba, flag, rock, wall
+  Text objects: BABA, FLAG, IS, STOP, WALL, WIN, YOU
 ```
 
-- **Lowercase**: Game objects (baba, rock, flag, wall)
-- **UPPERCASE**: Text objects (BABA, IS, YOU, etc.)
-- **Dots (.)**: Empty spaces
-- Objects are truncated to 3 characters for alignment
+- **Full object names**: No truncation, making rules clear
+- **Coordinate system**: Row and column numbers for reference
+- **Clear spacing**: Each cell properly aligned
+- **Object legend**: Lists all unique objects and text in the grid
 
 ### 5. Key Positions
 

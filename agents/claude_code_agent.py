@@ -220,26 +220,67 @@ Next move as JSON: """
         lines.append(f"PUSH objects: {', '.join(push_objects) if push_objects else 'nothing'}")
         lines.append(f"STOP objects: {', '.join(stop_objects) if stop_objects else 'nothing'}")
 
-        # Grid with clear labels
-        lines.append("\nGrid (lowercase=objects, UPPERCASE=text):")
+        # Grid representation
+        lines.append("\nGrid Layout:")
+        lines.append("- Empty cells: .")
+        lines.append("- Objects (game pieces): lowercase (e.g., baba, rock, flag)")
+        lines.append("- Text (rule pieces): UPPERCASE (e.g., BABA, IS, YOU)")
+        lines.append("")
 
-        # Build a more detailed grid
+        # Find max object name length for proper spacing
+        max_len = 4  # Minimum width
         for y in range(grid.height):
-            row_str = ""
+            for x in range(grid.width):
+                for obj in grid.grid[y][x]:
+                    max_len = max(max_len, len(obj.name))
+
+        # Add column numbers for reference
+        col_header = "   "
+        for x in range(grid.width):
+            col_header += str(x).center(max_len + 1)
+        lines.append(col_header)
+        lines.append("   " + "-" * (grid.width * (max_len + 1)))
+
+        # Build grid with proper spacing
+        for y in range(grid.height):
+            row_str = f"{y}| "
             for x in range(grid.width):
                 cell_objs = list(grid.grid[y][x])
                 if not cell_objs:
-                    row_str += ".  "
+                    row_str += ".".center(max_len) + " "
                 else:
-                    # Show all objects in cell
-                    obj_names = []
-                    for obj in cell_objs:
-                        if obj.is_text:
-                            obj_names.append(obj.name.upper()[:3])
-                        else:
-                            obj_names.append(obj.name.lower()[:3])
-                    row_str += obj_names[0].ljust(3)
+                    # If multiple objects in cell, show first one
+                    obj = cell_objs[0]
+                    if obj.is_text:
+                        # Remove _TEXT suffix for clarity
+                        name = obj.name.upper()
+                        if name.endswith("_TEXT"):
+                            name = name[:-5]
+                    else:
+                        name = obj.name.lower()
+                    row_str += name.center(max_len) + " "
             lines.append(row_str.rstrip())
+
+        # Add legend for what's in the grid
+        lines.append("\nObjects in grid:")
+        # Collect all unique objects
+        objects_set = set()
+        texts_set = set()
+        for y in range(grid.height):
+            for x in range(grid.width):
+                for obj in grid.grid[y][x]:
+                    if obj.is_text:
+                        name = obj.name.upper()
+                        if name.endswith("_TEXT"):
+                            name = name[:-5]
+                        texts_set.add(name)
+                    else:
+                        objects_set.add(obj.name.lower())
+
+        if objects_set:
+            lines.append(f"  Game objects: {', '.join(sorted(objects_set))}")
+        if texts_set:
+            lines.append(f"  Text objects: {', '.join(sorted(texts_set))}")
 
         # Object positions
         lines.append("\nKey positions:")
