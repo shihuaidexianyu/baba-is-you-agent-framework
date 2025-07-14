@@ -1,13 +1,13 @@
 # Baba Is AGI
 
-Python implementation of Baba Is You for building AI agents.
+A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
 
 ## Features
 
 - Complete game engine with dynamic rule system
 - 120+ objects from the original game
 - Level loader for official Baba Is You levels
-- Claude Code agent that plays autonomously
+- Multiple agent implementations (random, local search, Claude API)
 - 14 built-in environments of varying difficulty
 
 ## Installation
@@ -37,14 +37,17 @@ pixi run play
 
 Controls: Arrow keys/WASD to move, R to reset, Q to quit
 
-### Run the AI Agent
+### Run AI Agents
 
 ```bash
-# Watch Claude Code solve puzzles
-pixi run python agent/claude_code_agent.py
+# Run example random agent
+pixi run example-agent
 
-# Step through moves interactively  
-pixi run python agent/claude_code_agent.py --interactive
+# Run local autonomous agent
+pixi run python agent/baba_agent.py --agent-type local
+
+# Run Claude API agent (requires API key)
+pixi run python agent/baba_agent.py --agent-type claude
 ```
 
 ### Load Official Levels
@@ -64,11 +67,11 @@ grid = loader.load_level("baba", 0, registry)
 from baba import make
 
 # Create environment
-env = make("SimpleEnvironment-v0")
-obs = env.reset()
+env = make("simple")  # or any environment name
+grid = env.reset()
 
-# Take action (0=up, 1=right, 2=down, 3=left)
-obs, reward, done, info = env.step(1)
+# Take action
+grid, won, lost = env.step("right")  # or "up", "down", "left"
 ```
 
 ## Game Rules
@@ -84,11 +87,15 @@ Rules are formed by arranging text blocks:
 
 ```
 baba-is-agi/
-├── baba_is_you/         # Core game engine
-├── agent/               # AI agents
-├── scripts/             # Utility scripts
-├── docs/               # Documentation
-└── tests/              # Test suite
+├── baba/                # Core game engine
+│   ├── grid.py         # Game grid and mechanics
+│   ├── rule.py         # Rule parsing system
+│   ├── world_object.py # Game objects
+│   └── envs.py         # Pre-built environments
+├── agent/              # AI agent implementations
+├── scripts/            # Utility scripts
+├── tests/              # Comprehensive test suite (102 tests)
+└── docs/               # Documentation
 ```
 
 ## Available Environments
@@ -108,9 +115,16 @@ List all with: `pixi run python scripts/list_environments.py`
 
 ## Documentation
 
-- [Level Format](docs/level_format_analysis.md) - File structure details
-- [Level Loader](docs/level_loader_documentation.md) - Loading official levels
-- [Object Reference](docs/object_reference.md) - All objects and properties
+The codebase is extensively documented with detailed inline comments explaining:
+- Game mechanics and rule system
+- Object interactions and transformations  
+- Level design and environment structure
+- Agent development patterns
+
+Additional documentation:
+- [Level Format](docs/level_format_analysis.md) - Official .l file structure
+- [Level Loader](docs/level_loader_documentation.md) - Loading Baba Is You levels
+- [Object Reference](docs/object_reference.md) - Complete object listing
 
 ## License
 
