@@ -10,7 +10,7 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 - 120+ objects from the original game
 - Custom ASCII-based sprites (always available)
 - Level loader for official Baba Is You levels (requires game ownership)
-- Multiple agent implementations (random, local search, Claude API)
+- Clean agent system: UserAgent (human) and ClaudeCodeAgent (AI)
 - 14 built-in environments of varying difficulty
 
 ## Installation
@@ -47,17 +47,17 @@ pixi run play
 
 Controls: Arrow keys/WASD to move, R to reset, Q to quit
 
-### Run AI Agents
+### Play with AI Agent
 
 ```bash
-# Run example random agent
-pixi run example-agent
+# Watch Claude play (requires ANTHROPIC_API_KEY)
+pixi run play --agent claude
 
-# Run local autonomous agent
-pixi run python agent/baba_agent.py --agent-type local
+# Run Claude on a specific level
+pixi run play --env push_puzzle --agent claude
 
-# Run Claude API agent (requires API key)
-pixi run python agent/baba_agent.py --agent-type claude
+# Run multiple episodes without rendering
+pixi run play --agent claude --episodes 10 --no-render
 ```
 
 ### Load Official Levels
@@ -78,17 +78,27 @@ except FileNotFoundError:
     print("Official levels not found. Please own the game on Steam.")
 ```
 
-## Creating Agents
+## Creating Custom Agents
 
 ```python
-from baba import make
+from baba import Agent, make, EpisodePlayer
 
-# Create environment
-env = make("simple")  # or any environment name
-grid = env.reset()
+class MyAgent(Agent):
+    def __init__(self):
+        super().__init__("My Custom Agent")
+        
+    def get_action(self, grid):
+        # Analyze grid state and return action
+        # Options: "up", "down", "left", "right", "wait"
+        return "right"
 
-# Take action
-grid, won, lost = env.step("right")  # or "up", "down", "left"
+# Use your agent
+env = make("simple")
+agent = MyAgent()
+
+# Play episodes
+player = EpisodePlayer(env, agent)
+won, lost, steps = player.play_episode()
 ```
 
 ## Game Rules

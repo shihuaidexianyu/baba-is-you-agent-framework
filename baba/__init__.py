@@ -1,28 +1,61 @@
-from .envs import create_environment, list_environments
-from .play import GamePlayer
+"""
+Baba Is You - Python implementation for AI agent development.
+"""
 
-# Create aliases for compatibility
+# Core functionality
+from .envs import create_environment, list_environments
+from .grid import Grid
+from .properties import Property
+
+# Agent system
+from .agent import Agent, UserAgent, ClaudeCodeAgent
+from .episode_player import EpisodePlayer
+
+# Play functionality
+from .play import play, main as play_main
+
+
 def make(env_name):
-    """Create an environment by name."""
-    # Handle both formats: "simple" and "SimpleEnvironment-v0"
-    if env_name.endswith("-v0"):
-        # Extract the base name
-        base_name = env_name[:-3]  # Remove "-v0"
-        # Convert from CamelCase to snake_case
-        import re
-        base_name = re.sub('Environment$', '', base_name)
-        base_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', base_name).lower()
-        env_name = base_name
+    """
+    Create an environment by name.
     
+    Args:
+        env_name: Name of the environment
+        
+    Returns:
+        Environment instance
+    """
     return create_environment(env_name)
 
+
 def register(name, env_class):
-    """Register a new environment."""
+    """
+    Register a new environment.
+    
+    Args:
+        name: Name for the environment
+        env_class: Environment class
+    """
     from .envs import ENVIRONMENTS
     ENVIRONMENTS[name] = env_class
 
-def play(env):
-    """Play an environment interactively."""
-    player = GamePlayer(env.name if hasattr(env, 'name') else 'custom')
-    player.env = env
-    player.run()
+
+__all__ = [
+    # Core
+    'make',
+    'register',
+    'create_environment',
+    'list_environments',
+    'Grid',
+    'Property',
+    
+    # Agents
+    'Agent',
+    'UserAgent', 
+    'ClaudeCodeAgent',
+    'EpisodePlayer',
+    
+    # Play
+    'play',
+    'play_main',
+]
