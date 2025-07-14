@@ -4,6 +4,12 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 
 ![Baba Is You Gameplay](docs/gameplay_demo.gif)
 
+### AI Agent with Reasoning Display
+
+![Claude Code Agent Playing](docs/gameplay_claude_simple_reasoning.gif)
+
+*Claude Code agent showing its reasoning process while solving puzzles*
+
 > **⚠️ Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
 
 ## Features
@@ -14,6 +20,7 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 - Level loader for official Baba Is You levels (requires game ownership)
 - Gym-like environment API for easy integration
 - Simple agent interface - just implement `get_action()`
+- Claude Code agent with reasoning display in UI
 - 14 built-in environments of varying difficulty
 
 ## Installation
@@ -54,13 +61,13 @@ Controls: Arrow keys/WASD to move, R to reset, Q to quit
 
 ```bash
 # Watch a random agent play
-pixi run agent
+pixi run agent-random
 
-# Run agents with visualization
-pixi run agent-visual
+# Run demo agent with pathfinding
+pixi run agent-demo
 
-# Run Claude Code agent (requires ANTHROPIC_API_KEY)
-pixi run agent-api
+# Run Claude Code agent with reasoning display (requires claude-code CLI)
+pixi run agent-claude
 
 # List all available environments
 pixi run list-envs
@@ -87,6 +94,8 @@ except FileNotFoundError:
 ## Creating Custom Agents
 
 The project uses a Gym-like API, making it easy to create agents:
+
+#### Basic Agent Example
 
 ```python
 from baba import Agent, make
@@ -128,6 +137,18 @@ obs, reward, done, info = env.step("right")
 
 # Render current state
 img = env.render()  # Returns RGB array
+```
+
+#### Claude Code Agent
+
+The project includes a Claude Code agent that uses AI to play the game:
+
+```python
+from agents.claude_code_agent import ClaudeCodeAgent
+
+agent = ClaudeCodeAgent(verbose=True)
+# Agent will display its reasoning in the UI:
+# "Moving toward flag", "Need to push rock", etc.
 ```
 
 ## Game Rules
