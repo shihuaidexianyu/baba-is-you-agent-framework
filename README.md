@@ -6,19 +6,15 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 
 <table>
 <tr>
-<td width="50%">
-
-### Game Demo
-![Baba Is You Gameplay](docs/gameplay_demo.gif)
-*Classic Baba Is You gameplay*
-
+<td align="center">
+<img src="docs/gameplay_demo.gif" width="240"><br/>
+<b>Game Demo</b><br/>
+<i>Classic Baba Is You gameplay</i>
 </td>
-<td width="50%">
-
-### AI Agent with Reasoning
-![Claude Code Agent Playing](docs/gameplay_claude_simple_reasoning.gif)
-*Claude Code agent showing its thinking process*
-
+<td align="center">
+<img src="docs/gameplay_claude_simple_reasoning.gif" width="240"><br/>
+<b>AI Agent with Reasoning</b><br/>
+<i>Claude Code agent showing its thinking process</i>
 </td>
 </tr>
 </table>
@@ -33,13 +29,13 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 </tr>
 <tr>
 <td align="center"><b>Simple</b></td>
-<td align="center"><img src="docs/gameplay_simple_demo.gif" width="320"><br/>✅ Solves in 6 steps<br/><i>Uses BFS to find direct path</i></td>
-<td align="center"><img src="docs/gameplay_simple_claude.gif" width="320"><br/>✅ Solves in 6 steps<br/><i>Reasons: "Direct path to flag"</i></td>
+<td align="center"><img src="docs/gameplay_simple_demo.gif" width="240"><br/>✅ Solves in 6 steps<br/><i>Uses BFS to find direct path</i></td>
+<td align="center"><img src="docs/gameplay_simple_claude.gif" width="240"><br/>✅ Solves in 6 steps<br/><i>Reasons: "Direct path to flag"</i></td>
 </tr>
 <tr>
 <td align="center"><b>Push Puzzle</b></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="320"><br/>⚠️ Gets stuck after pushing rocks<br/><i>BFS handles physics but not rule manipulation</i></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="320"><br/>🤔 Attempts various strategies<br/><i>Reasons about pushing rocks and changing rules</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>⚠️ Gets stuck after pushing rocks<br/><i>BFS handles physics but not rule manipulation</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>🤔 Attempts various strategies<br/><i>Reasons about pushing rocks and changing rules</i></td>
 </tr>
 </table>
 
