@@ -57,6 +57,7 @@ class Agent(ABC):
         cell_size: int = 48,
         fps: int = 30,
         verbose: bool = True,
+        max_steps: int = 200,
     ) -> dict:
         """
         Play a single episode in the environment.
@@ -69,6 +70,7 @@ class Agent(ABC):
             cell_size: Size of each cell in pixels when rendering
             fps: Frames per second for rendering
             verbose: Whether to print episode information
+            max_steps: Maximum steps before forcing episode to end
 
         Returns:
             Dictionary with episode statistics
@@ -82,7 +84,7 @@ class Agent(ABC):
         if render:
             pygame.init()
             width = env.width * cell_size
-            height = env.height * cell_size + 100  # Extra space for UI
+            height = env.height * cell_size + 120  # Extra space for UI with reasoning
             screen = pygame.display.set_mode((width, height))
             pygame.display.set_caption(f"Baba Is You - {env.name} ({self.name})")
             clock = pygame.time.Clock()
@@ -98,8 +100,9 @@ class Agent(ABC):
         # Episode loop
         done = False
         total_reward = 0.0
+        steps = 0
 
-        while not done:
+        while not done and steps < max_steps:
             # Render if enabled
             if render:
                 self._render_frame(screen, env, obs, font, cell_size)
@@ -119,12 +122,20 @@ class Agent(ABC):
             # Take action in environment
             obs, reward, done, info = env.step(action)
             total_reward += reward
+            steps += 1
 
             if verbose and done:
                 if info["won"]:
                     print(f"🎉 Won in {info['steps']} steps!")
                 elif info["lost"]:
                     print(f"💀 Lost after {info['steps']} steps")
+
+            # Check if we hit the step limit
+            if steps >= max_steps and not done:
+                done = True
+                info["timeout"] = True
+                if verbose:
+                    print(f"⏱️ Timeout after {max_steps} steps")
 
         # Save recording if enabled
         if record and frames:
@@ -138,8 +149,9 @@ class Agent(ABC):
         return {
             "won": info.get("won", False),
             "lost": info.get("lost", False),
-            "steps": info.get("steps", 0),
+            "steps": info.get("steps", steps),
             "reward": total_reward,
+            "timeout": info.get("timeout", False),
         }
 
     def play_episodes(
@@ -227,6 +239,15 @@ class Agent(ABC):
         status_surface = font.render(status_text, True, color)
         screen.blit(status_surface, (10, y_offset))
 
+        # Show agent reasoning if available
+        if hasattr(self, "last_reasoning"):
+            reasoning_text = f"Thinking: {self.last_reasoning}"
+            reasoning_surface = font.render(reasoning_text, True, (255, 255, 100))
+            screen.blit(reasoning_surface, (10, y_offset + 25))
+            rules_y_offset = y_offset + 50
+        else:
+            rules_y_offset = y_offset + 30
+
         # Rules (show first few)
         rules = obs.rule_manager.rules[:4]
         if rules:
@@ -234,7 +255,7 @@ class Agent(ABC):
             if len(obs.rule_manager.rules) > 4:
                 rules_text += f" (+{len(obs.rule_manager.rules) - 4} more)"
             rules_surface = font.render(rules_text, True, (150, 150, 255))
-            screen.blit(rules_surface, (10, y_offset + 30))
+            screen.blit(rules_surface, (10, rules_y_offset))
 
         pygame.display.flip()
 

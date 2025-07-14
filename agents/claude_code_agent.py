@@ -7,6 +7,7 @@ Requires claude-code-sdk to be installed.
 """
 
 import asyncio
+import json
 import time
 
 from claude_code_sdk import (
@@ -29,6 +30,7 @@ class ClaudeCodeAgent(Agent):
         self.conversation_history = []  # Track conversation for context
         self.episode_steps = 0
         self.session_active = False
+        self.last_reasoning = "Starting game..."  # Store reasoning for UI display
 
     def reset(self):  # noqa: B027
         """Reset the agent for a new episode."""
@@ -61,21 +63,24 @@ class ClaudeCodeAgent(Agent):
         """Ask Claude Code for the next action given the game state."""
         # Build minimal prompt for speed
         if self.episode_steps == 1:
-            prompt = f"""Baba Is You game. Respond with just one movement word.
+            prompt = f"""Baba Is You puzzle game. Choose your move.
 
 {state_description}
 
-ACTION: """
+Respond with only this JSON format:
+{{"action": "right", "reasoning": "move toward flag"}}
+
+Your JSON response: """
         else:
             prompt = f"""Step {self.episode_steps}:
 {state_description}
 
-ACTION: """
+Next move as JSON: """
 
         # Use continue_conversation after first message
         options = ClaudeCodeOptions(
             max_turns=1,
-            system_prompt="You are playing Baba Is You. Respond with only movement words: up, down, left, right. Never use 'wait'. Be fast and decisive.",
+            system_prompt='You are an AI playing Baba Is You. ALWAYS respond with only valid JSON in this exact format: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right. Nothing else.',
             continue_conversation=self.session_active,
             permission_mode="bypassPermissions",  # No prompts during game
         )
@@ -105,29 +110,37 @@ ACTION: """
         # Mark session as active after first query
         self.session_active = True
 
-        if self.verbose and response:
-            print(f"\n[Step {self.episode_steps}] Claude: {response.strip()}")
+        if self.verbose:
+            if response:
+                print(f"\n[Step {self.episode_steps}] Claude response: '{response.strip()}'")
+            else:
+                print(f"\n[Step {self.episode_steps}] Claude returned empty response!")
 
-        # Extract action from response
+        # Extract action and reasoning from JSON response
         action = None
-        response_lower = response.strip().lower()
+        reasoning = "Thinking..."
 
-        # Look for ACTION: line first
-        for line in response_lower.split("\n"):
-            if "action:" in line:
-                remaining = line.split("action:")[1].strip()
-                for direction in ["up", "down", "left", "right"]:
-                    if direction in remaining:
-                        action = direction
-                        break
-                if action:
-                    break
-
-        # If no ACTION: line, look for direction words
-        if not action:
+        # Try to parse JSON
+        try:
+            # Find JSON in response
+            json_start = response.find("{")
+            json_end = response.rfind("}") + 1
+            if json_start >= 0 and json_end > json_start:
+                json_str = response[json_start:json_end]
+                data = json.loads(json_str)
+                action = data.get("action", "").lower()
+                reasoning = data.get("reasoning", "No reasoning provided")
+                if action not in ["up", "down", "left", "right"]:
+                    action = None
+        except Exception as e:
+            if self.verbose:
+                print(f"JSON parse error: {e}")
+            # Fallback to looking for direction words
+            response_lower = response.strip().lower()
             for direction in ["up", "down", "left", "right"]:
                 if direction in response_lower:
                     action = direction
+                    reasoning = "Quick decision"
                     break
 
         # Last resort - pick a direction based on goal position
@@ -162,11 +175,19 @@ ACTION: """
 
                 action = random.choice(["up", "down", "left", "right"])
 
+            reasoning = f"No clear path, trying {action}"
+            self.last_reasoning = reasoning
+
             if self.verbose:
                 print(f"(No clear action found, choosing: {action})")
 
+        # Store reasoning for UI display
+        self.last_reasoning = reasoning
+
         if self.verbose:
-            print(f">>> Action: {action}")
+            print(f">>> Action: {action} | Reasoning: {reasoning}")
+            if action is None:
+                print(">>> Failed to parse response, falling back to heuristic")
 
         # Store action in history
         self.conversation_history.append((action, "taken"))
