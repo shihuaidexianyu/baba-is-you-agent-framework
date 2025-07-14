@@ -2,7 +2,7 @@
 
 > **Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
 
-A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
+A Python implementation of Baba Is You for testing AI agents. This repository provides a game engine, environment API, and example agents.
 
 ## Agent Comparison
 
@@ -10,34 +10,46 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 <tr>
 <th align="center">Puzzle</th>
 <th align="center">Demo Agent (BFS Pathfinding)</th>
-<th align="center">Claude Code Agent (<a href="docs/claude_code_agent_design.md">AI with Reasoning</a>)</th>
+<th align="center">Claude Code Agent (<a href="docs/claude_code_agent_design.md">Design Details</a>)</th>
 </tr>
 <tr>
 <td align="center"><b>Simple</b></td>
-<td align="center"><img src="docs/gameplay_simple_demo.gif" width="240"><br/>Solves in 6 steps<br/><i>Uses BFS to find direct path</i></td>
-<td align="center"><img src="docs/gameplay_simple_claude.gif" width="240"><br/>Solves in 6 steps<br/><i>Reasons: "Direct path to flag"</i></td>
+<td align="center"><img src="docs/gameplay_simple_demo.gif" width="240"><br/>Solves in 6 steps<br/><i>BFS pathfinding</i></td>
+<td align="center"><img src="docs/gameplay_simple_claude.gif" width="240"><br/>Solves in 6 steps<br/><i>Shows: "Move baba right toward flag at (8,5)"</i></td>
 </tr>
 <tr>
 <td align="center"><b>Push Puzzle</b></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>Gets stuck after pushing rocks<br/><i>BFS handles physics but not rule manipulation</i></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>Attempts various strategies<br/><i>Reasons about pushing rocks and changing rules</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>Pushes rocks, gets stuck<br/><i>BFS pathfinding with push handling</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>Explores different approaches<br/><i>Shows reasoning in UI</i></td>
 </tr>
 </table>
 
-The comparison demonstrates the fundamental difference between traditional pathfinding and AI reasoning:
-- **Demo Agent**: Uses BFS pathfinding to navigate and push objects, but cannot reason about changing game rules
-- **Claude Code Agent**: Can analyze game state and reason about both physical movements and rule manipulation
+This comparison shows two included example agents:
+- **Demo Agent**: Uses BFS pathfinding to navigate and push objects
+- **Claude Code Agent**: Uses the Claude API to select actions based on game state
 
-## Features
+## What This Repository Provides
 
-- Complete game engine with dynamic rule system
-- 120+ objects from the original game
-- Custom ASCII-based sprites (always available)
-- Level loader for official Baba Is You levels (requires game ownership)
-- Gym-like environment API for easy integration
-- Simple agent interface - just implement `get_action()`
-- Claude Code agent with reasoning display in UI
-- 14 built-in environments of varying difficulty
+### Core Components
+- Baba Is You game engine with rule system
+- 120+ game objects and properties
+- 14 built-in puzzle environments
+- Gym-like environment API (`reset()`, `step()`, `render()`)
+
+### Agent Development
+- Simple agent interface - implement `get_action(observation)`
+- Grid observation with game state information
+- Built-in episode management and recording
+
+### Example Agents
+- Random agent - baseline performance
+- Demo agent - BFS pathfinding with object pushing
+- Claude Code agent - uses Claude API (requires claude-code CLI)
+
+### Optional Features
+- Level loader for official game files (requires Steam ownership)
+- Official sprite support (requires Steam ownership)
+- Custom ASCII sprites (always available)
 
 ## Installation
 
@@ -139,7 +151,7 @@ stats = agent.play_episodes(env, num_episodes=100, render=False)
 print(f"Win rate: {stats['win_rate']*100:.1f}%")
 ```
 
-### Environment API (Gym-like)
+### Environment API
 
 ```python
 # Reset environment
@@ -155,16 +167,13 @@ obs, reward, done, info = env.step("right")
 img = env.render()  # Returns RGB array
 ```
 
-#### Claude Code Agent
-
-The project includes a Claude Code agent that uses AI to play the game:
+#### Claude Code Agent Example
 
 ```python
 from agents.claude_code_agent import ClaudeCodeAgent
 
 agent = ClaudeCodeAgent(verbose=True)
-# Agent will display its reasoning in the UI:
-# "Moving toward flag", "Need to push rock", etc.
+# Displays reasoning in UI during gameplay
 ```
 
 ## Game Rules
@@ -208,16 +217,10 @@ List all with: `pixi run list-envs`
 
 ## Documentation
 
-The codebase is extensively documented with detailed inline comments explaining:
-- Game mechanics and rule system
-- Object interactions and transformations  
-- Level design and environment structure
-- Agent development patterns
-
-Additional documentation:
-- [Level Format](docs/level_format_analysis.md) - Official .l file structure (for reference)
-- [Level Loader](docs/level_loader_documentation.md) - Loading official levels (requires game)
-- [Object Reference](docs/object_reference.md) - Complete object listing
+- [Claude Code Agent Design](docs/claude_code_agent_design.md) - How the Claude agent receives and processes game state
+- [Object Reference](docs/object_reference.md) - Complete list of game objects
+- [Level Loader](docs/level_loader_documentation.md) - Loading official levels (requires game ownership)
+- [Level Format](docs/level_format_analysis.md) - Official .l file format reference
 
 ## Copyright Notice
 
