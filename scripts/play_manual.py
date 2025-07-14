@@ -7,8 +7,10 @@ It's equivalent to: pixi run play --agent user
 """
 
 import sys
-from baba.play import play
+
 from baba.envs import list_environments
+from baba.play import play
+
 
 def main():
     # Get environment from command line or use default
@@ -19,25 +21,20 @@ def main():
             print(f"Environment '{env_name}' not found.")
             print(f"Available environments: {', '.join(list_environments())}")
             return 1
-    
+
     print(f"🎮 Manual play: {env_name}")
     print("Controls:")
     print("  Arrow keys or WASD: Move")
-    print("  Space: Wait")  
+    print("  Space: Wait")
     print("  R: Reset level")
     print("  Q/ESC: Quit")
     print()
-    
+
     # Play with human control
-    stats = play(
-        env_name=env_name,
-        agent_type="user",
-        episodes=1,
-        render=True,
-        verbose=True
-    )
-    
+    play(env_name=env_name, agent_type="user", episodes=1, render=True, verbose=True)
+
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

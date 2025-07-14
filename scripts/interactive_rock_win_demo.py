@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Create a custom level to test ROCK IS WIN properly."""
 
-from baba.registration import Registry
-from baba.grid import Grid
 import pygame
+
+from baba.grid import Grid
+from baba.registration import Registry
 
 # Initialize pygame
 pygame.init()
@@ -65,34 +66,35 @@ while running:
                 grid.step("left")
             elif event.key == pygame.K_RIGHT:
                 grid.step("right")
-            
+
             # Check win
             if grid.won:
                 print("YOU WON!")
                 running = False
-    
+
     # Render
     screen.fill((30, 30, 30))
-    
+
     # Render all objects
     for y in range(grid.height):
         for x in range(grid.width):
             for obj in grid.grid[y][x]:
                 # Simple colored rectangles for now
-                color = getattr(obj, 'color', (128, 128, 128))
+                color = getattr(obj, "color", (128, 128, 128))
                 if isinstance(color, tuple) and len(color) == 3:
                     rect = pygame.Rect(x * cell_size, y * cell_size, cell_size, cell_size)
                     pygame.draw.rect(screen, color, rect)
                     pygame.draw.rect(screen, (0, 0, 0), rect, 2)
-                    
+
                     # Draw text for text objects
-                    if obj.is_text and hasattr(obj, 'text'):
+                    if obj.is_text and hasattr(obj, "text"):
                         font = pygame.font.Font(None, 20)
                         text = font.render(obj.text, True, (255, 255, 255))
-                        text_rect = text.get_rect(center=(x * cell_size + cell_size // 2, 
-                                                         y * cell_size + cell_size // 2))
+                        text_rect = text.get_rect(
+                            center=(x * cell_size + cell_size // 2, y * cell_size + cell_size // 2)
+                        )
                         screen.blit(text, text_rect)
-    
+
     pygame.display.flip()
     clock.tick(60)
 

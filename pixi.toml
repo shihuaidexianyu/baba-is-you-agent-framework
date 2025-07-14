@@ -23,6 +23,18 @@ test-coverage = "python -m pytest tests/ --cov=baba --cov-report=term-missing"
 test-unit = "python -m pytest tests/ -m 'not integration'"
 test-integration = "python -m pytest tests/ -m integration"
 
+# Linting and Type Checking
+lint = "ruff check ."
+lint-fix = "ruff check . --fix"
+format = "ruff format ."
+format-check = "ruff format . --check"
+ty-check = "uvx ty check"
+typecheck = "uvx ty check"
+
+# Pre-commit
+pre-commit-install = "pre-commit install"
+pre-commit-run = "pre-commit run --all-files"
+
 # Environment and sprite tasks
 list-envs = "python scripts/list_environments.py"
 setup-sprites = "python scripts/setup_sprites.py"
@@ -33,12 +45,17 @@ sprite-showcase = "python scripts/sprite_showcase.py"
 example-agent = "python scripts/example_agent.py"
 custom-level = "python scripts/custom_level.py"
 record-gif = "python scripts/record_gameplay.py"
+record-claude = "python scripts/record_claude_gameplay.py"
+record-demos = "python scripts/record_demo_gifs.py"
 viz-level = "python scripts/visualize_level.py"
 
 
 [dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.12"
 pip = "*"
+ruff = ">=0.8.0"
+uv = ">=0.5.0"
+pre-commit = ">=3.5.0"
 
 [environments]
 default = []

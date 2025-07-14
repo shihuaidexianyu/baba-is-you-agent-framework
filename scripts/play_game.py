@@ -7,6 +7,7 @@ All command-line arguments are passed through to the play module.
 """
 
 import sys
+
 from baba.play import main
 
 if __name__ == "__main__":

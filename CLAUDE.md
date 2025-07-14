@@ -72,6 +72,15 @@ pixi run sprite-showcase   # Show all available sprites
 # Development
 pixi run example-agent     # Run example random agent
 pixi run custom-level      # Demo custom level creation
+
+# Code Quality
+pixi run lint              # Check code with Ruff linter
+pixi run lint-fix          # Auto-fix linting issues
+pixi run format            # Format code with Ruff
+pixi run format-check      # Check formatting without changes
+pixi run typecheck         # Run Ty type checker
+pixi run pre-commit-install # Install git pre-commit hooks
+pixi run pre-commit-run    # Manually run all pre-commit hooks
 ```
 
 **Adding New Dependencies:**
@@ -151,4 +160,35 @@ pixi run agent-local    # Watch autonomous AI play
 pixi run agent-visual   # Watch AI with GUI visualization
 pixi run list-envs      # See all available environments
 pixi run test           # Run test suite
+```
+
+### Code Quality
+
+This project uses automated code quality tools:
+
+**Linting & Formatting:**
+- **Ruff** for Python linting and formatting (configuration in `pyproject.toml`)
+- Line length: 100 characters
+- Double quotes for strings
+- Automatic import sorting
+
+**Type Checking:**
+- **Ty** for type checking (Astral's new Rust-based type checker)
+- Note: Ty is in preview/beta, expect some rough edges
+
+**Pre-commit Hooks:**
+- Automatically run on every commit
+- Checks linting, formatting, and types
+- Install with: `pixi run pre-commit-install`
+
+**Before committing:**
+```bash
+pixi run lint           # Check for linting issues
+pixi run format         # Auto-format code
+pixi run typecheck      # Check types
+```
+
+Or run all checks at once:
+```bash
+pixi run pre-commit-run
 ```

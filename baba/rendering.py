@@ -1,12 +1,9 @@
 """Rendering utilities for Baba Is You."""
 
-import os
 from pathlib import Path
-from typing import Optional, Tuple, Union
 
 import cv2
 import numpy as np
-
 
 # Cache for loaded sprites
 _sprite_cache = {}
@@ -21,11 +18,11 @@ def get_asset_path() -> Path:
         Path.cwd() / "assets",
         Path.cwd() / "baba_is_you" / "assets",
     ]
-    
+
     for path in possible_paths:
         if path.exists():
             return path
-    
+
     # If no assets found, create a placeholder directory
     default_path = Path(__file__).parent / "assets"
     default_path.mkdir(exist_ok=True)
@@ -44,9 +41,9 @@ def load_icon(icon_name: str) -> np.ndarray:
     """
     if icon_name in _sprite_cache:
         return _sprite_cache[icon_name].copy()
-    
+
     asset_path = get_asset_path()
-    
+
     # Try different extensions
     for ext in [".png", ".jpg", ".jpeg", ".bmp"]:
         icon_path = asset_path / f"{icon_name}{ext}"
@@ -57,14 +54,14 @@ def load_icon(icon_name: str) -> np.ndarray:
                 sprite = cv2.cvtColor(sprite, cv2.COLOR_BGR2RGB)
                 _sprite_cache[icon_name] = sprite
                 return sprite.copy()
-    
+
     # Return a placeholder sprite if not found
     placeholder = create_placeholder_sprite()
     _sprite_cache[icon_name] = placeholder
     return placeholder.copy()
 
 
-def create_placeholder_sprite(size: Tuple[int, int] = (24, 24)) -> np.ndarray:
+def create_placeholder_sprite(size: tuple[int, int] = (24, 24)) -> np.ndarray:
     """
     Create a placeholder sprite.
 
@@ -81,9 +78,7 @@ def create_placeholder_sprite(size: Tuple[int, int] = (24, 24)) -> np.ndarray:
 
 
 def tiny_sprite(
-    text: str, 
-    color: Tuple[int, int, int], 
-    size: Tuple[int, int] = (24, 24)
+    text: str, color: tuple[int, int, int], size: tuple[int, int] = (24, 24)
 ) -> np.ndarray:
     """
     Create a tiny sprite with text.
@@ -97,8 +92,8 @@ def tiny_sprite(
         Sprite as numpy array
     """
     # Import our new sprite functions
-    from .sprites import create_text_sprite, create_object_sprite
-    
+    from .sprites import create_object_sprite, create_text_sprite
+
     # Check if this is a text object (all caps)
     if text.isupper():
         return create_text_sprite(text, color, size)
@@ -108,9 +103,7 @@ def tiny_sprite(
 
 
 def add_border(
-    sprite: np.ndarray, 
-    color: Tuple[int, int, int] = (255, 255, 255), 
-    thickness: int = 1
+    sprite: np.ndarray, color: tuple[int, int, int] = (255, 255, 255), thickness: int = 1
 ) -> np.ndarray:
     """
     Add a border to a sprite.
@@ -125,10 +118,10 @@ def add_border(
     """
     bordered = sprite.copy()
     h, w = sprite.shape[:2]
-    
+
     # Draw rectangle border
-    cv2.rectangle(bordered, (0, 0), (w-1, h-1), color, thickness)
-    
+    cv2.rectangle(bordered, (0, 0), (w - 1, h - 1), color, thickness)
+
     return bordered
 
 
@@ -143,18 +136,13 @@ def get_icon_for_object(obj_name: str, is_text: bool = False) -> np.ndarray:
     Returns:
         Icon sprite
     """
-    if is_text:
-        icon_name = f"text_{obj_name}_0_1"
-    else:
-        icon_name = f"object_{obj_name}_4"
-    
+    icon_name = f"text_{obj_name}_0_1" if is_text else f"object_{obj_name}_4"
+
     return load_icon(icon_name)
 
 
 def composite_sprites(
-    sprites: list[np.ndarray], 
-    positions: list[Tuple[int, int]], 
-    canvas_size: Tuple[int, int]
+    sprites: list[np.ndarray], positions: list[tuple[int, int]], canvas_size: tuple[int, int]
 ) -> np.ndarray:
     """
     Composite multiple sprites onto a canvas.
@@ -168,26 +156,26 @@ def composite_sprites(
         Composited image
     """
     canvas = np.zeros((*canvas_size[::-1], 3), dtype=np.uint8)
-    
-    for sprite, (x, y) in zip(sprites, positions):
+
+    for sprite, (x, y) in zip(sprites, positions, strict=False):
         h, w = sprite.shape[:2]
-        
+
         # Calculate the region to paste (handling boundaries)
         y1 = max(0, y)
         y2 = min(canvas_size[1], y + h)
         x1 = max(0, x)
         x2 = min(canvas_size[0], x + w)
-        
+
         # Calculate the corresponding region in the sprite
         sy1 = max(0, -y)
         sy2 = sy1 + (y2 - y1)
         sx1 = max(0, -x)
         sx2 = sx1 + (x2 - x1)
-        
+
         # Paste the sprite
         if y2 > y1 and x2 > x1:
             canvas[y1:y2, x1:x2] = sprite[sy1:sy2, sx1:sx2]
-    
+
     return canvas
 
 
@@ -204,20 +192,17 @@ def scale_sprite(sprite: np.ndarray, scale: float) -> np.ndarray:
     """
     h, w = sprite.shape[:2]
     new_size = (int(w * scale), int(h * scale))
-    
-    if scale > 1:
-        interpolation = cv2.INTER_LINEAR
-    else:
-        interpolation = cv2.INTER_AREA
-    
+
+    interpolation = cv2.INTER_LINEAR if scale > 1 else cv2.INTER_AREA
+
     return cv2.resize(sprite, new_size, interpolation=interpolation)
 
 
 def create_grid_lines(
-    size: Tuple[int, int], 
-    cell_size: int, 
-    color: Tuple[int, int, int] = (50, 50, 50),
-    thickness: int = 1
+    size: tuple[int, int],
+    cell_size: int,
+    color: tuple[int, int, int] = (50, 50, 50),
+    thickness: int = 1,
 ) -> np.ndarray:
     """
     Create grid lines overlay.
@@ -233,13 +218,13 @@ def create_grid_lines(
     """
     # Create RGBA image for transparency
     overlay = np.zeros((*size[::-1], 4), dtype=np.uint8)
-    
+
     # Draw vertical lines
     for x in range(0, size[0] + 1, cell_size):
         cv2.line(overlay, (x, 0), (x, size[1]), (*color, 255), thickness)
-    
+
     # Draw horizontal lines
     for y in range(0, size[1] + 1, cell_size):
         cv2.line(overlay, (0, y), (size[0], y), (*color, 255), thickness)
-    
+
     return overlay

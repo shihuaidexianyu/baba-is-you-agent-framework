@@ -11,42 +11,38 @@ Objects in Baba Is You have two forms:
 2. Text objects: Words that form rules when arranged properly
 """
 
-import os
-from collections import defaultdict
 from dataclasses import dataclass, field
-from functools import partial
-from typing import Callable, List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
 
-from .rendering import add_border, load_icon, tiny_sprite
 from .properties import Property
+from .rendering import add_border, load_icon, tiny_sprite
 
 
 @dataclass(eq=False)
 class Object:
     """
     Base class for all game objects (both regular objects and text).
-    
+
     Key attributes:
     - name: Object identifier (e.g., "baba", "rock", "baba_text")
     - type_id: Unique numeric ID for fast comparison
     - color: RGB color for rendering
     - is_text: Whether this is a text object that can form rules
     - properties: List of inherent properties (rarely used, most properties come from rules)
-    
+
     Objects are hashable and comparable by their type_id.
     """
 
     name: str = ""
     type_id: int = 0
-    color: Optional[Union[Tuple[int, int, int], np.ndarray]] = None
-    sprite: Optional[np.ndarray] = None
+    color: tuple[int, int, int] | np.ndarray | None = None
+    sprite: np.ndarray | None = None
     is_text: bool = False
     traversible: bool = True
-    displaceable: Optional[bool] = None
-    properties: List["Property"] = field(default_factory=list)
+    displaceable: bool | None = None
+    properties: list["Property"] = field(default_factory=list)
 
     @property
     def noun(self):
@@ -72,35 +68,32 @@ class Object:
     def __repr__(self):
         return f"Object[{self.name}/{self.type_id}, text:{self.is_text}]"
 
-    def render(self, size=(24, 24), variant: int = 0):
+    def render(self, size=(24, 24), variant: int = 0):  # noqa: ARG002
         """
         Render the object as a sprite image.
-        
+
         First attempts to use official game sprites if available,
         then falls back to custom ASCII-based sprites.
-        
+
         Args:
             size: Desired sprite size in pixels
             variant: Sprite variant (for animation, not fully implemented)
-            
+
         Returns:
             Numpy array representing the sprite image
         """
         # Try to load actual game sprite first (if available)
         from .sprite_loader import sprite_loader
-        
+
         if sprite_loader.has_real_sprites:
-            # Determine sprite name
-            if self.is_text:
-                sprite_name = self.name  # Already includes _text suffix
-            else:
-                sprite_name = self.name
-                
+            # Sprite name is just the object name (text objects already include _text suffix)
+            sprite_name = self.name
+
             sprite = sprite_loader.load_sprite(sprite_name, size)
-            
+
             if sprite is not None:
                 return sprite
-        
+
         # Fallback to our custom generated sprites
         # Remove _text suffix for text objects when generating sprite
         text = self.name[:-5] if self.is_text else self.name
@@ -114,9 +107,10 @@ class Object:
 @dataclass(eq=False)
 class BabaObject(Object):
     """The main character - Baba! Usually controlled by the player."""
+
     name: str = "baba"
     sprite: np.ndarray = field(default_factory=lambda: load_icon("object_00_4"))
-    color: Tuple[int, int, int] = (255, 255, 255)  # White
+    color: tuple[int, int, int] = (255, 255, 255)  # White
     is_text: bool = False
     displaceable: bool = True
 
@@ -125,7 +119,7 @@ class BabaObject(Object):
 class WallObject(Object):
     name: str = "wall"
     sprite: np.ndarray = field(default_factory=lambda: load_icon("object_01_4"))
-    color: Tuple[int, int, int] = (139, 69, 19)  # Saddle brown
+    color: tuple[int, int, int] = (139, 69, 19)  # Saddle brown
     traversible: bool = False
     displaceable: bool = False
 
@@ -134,7 +128,7 @@ class WallObject(Object):
 class RockObject(Object):
     name: str = "rock"
     sprite: np.ndarray = field(default_factory=lambda: load_icon("object_04_4"))
-    color: Tuple[int, int, int] = (169, 169, 169)  # Dark gray
+    color: tuple[int, int, int] = (169, 169, 169)  # Dark gray
     displaceable: bool = True
 
 
@@ -142,7 +136,7 @@ class RockObject(Object):
 class FlagObject(Object):
     name: str = "flag"
     sprite: np.ndarray = field(default_factory=lambda: load_icon("object_06_4"))
-    color: Tuple[int, int, int] = (255, 215, 0)  # Gold
+    color: tuple[int, int, int] = (255, 215, 0)  # Gold
     displaceable: bool = True
 
 
@@ -150,7 +144,7 @@ class FlagObject(Object):
 class WaterObject(Object):
     name: str = "water"
     sprite: np.ndarray = field(default_factory=lambda: load_icon("object_13_4"))
-    color: Tuple[int, int, int] = (64, 164, 223)  # Nice blue
+    color: tuple[int, int, int] = (64, 164, 223)  # Nice blue
     is_traversible: bool = False
     displaceable: bool = False
 
@@ -159,16 +153,17 @@ class WaterObject(Object):
 class TextObject(Object):
     """
     Base class for all text objects.
-    
+
     Text objects are always pushable and form rules when arranged properly.
     They have special attributes:
     - noun: For noun text (BABA, ROCK, etc.)
     - verb: For verb text (IS, HAS, etc.)
     - property: For property text (YOU, WIN, PUSH, etc.)
     """
+
     is_text: bool = True
     displaceable: bool = True  # Text is always pushable
-    noun: Optional[str] = None
+    noun: str | None = None
 
 
 def _capitalize(text):
@@ -181,8 +176,9 @@ def _capitalize(text):
 @dataclass(eq=False)
 class BabaTextObject(TextObject):
     """Text object 'BABA' - used in rules like 'BABA IS YOU'."""
+
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_00_4"))
-    color: Tuple[int, int, int] = (255, 182, 193)  # Light pink
+    color: tuple[int, int, int] = (255, 182, 193)  # Light pink
     text: str = "BABA"  # Display text
     noun: str = "baba"  # The object type this text refers to
 
@@ -195,8 +191,9 @@ class BabaTextObject(TextObject):
 @dataclass(eq=False)
 class IsTextObject(TextObject):
     """The verb 'IS' - connects nouns to properties or other nouns."""
+
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_is_0_1"))
-    color: Tuple[int, int, int] = (255, 255, 255)  # White
+    color: tuple[int, int, int] = (255, 255, 255)  # White
     text: str = "IS"
     verb: str = "is"  # Added verb attribute for rule parsing
     is_operator: bool = True
@@ -210,8 +207,9 @@ class IsTextObject(TextObject):
 @dataclass(eq=False)
 class YouTextObject(TextObject):
     """Property text 'YOU' - makes objects player-controlled."""
+
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_you_0_1"))
-    color: Tuple[int, int, int] = (255, 192, 203)  # Pink
+    color: tuple[int, int, int] = (255, 192, 203)  # Pink
     text: str = "YOU"
     is_property: bool = True
     property: Property = Property.YOU  # Links to the Property enum
@@ -225,7 +223,7 @@ class YouTextObject(TextObject):
 @dataclass(eq=False)
 class WallTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_01_4"))
-    color: Tuple[int, int, int] = (210, 180, 140)  # Tan
+    color: tuple[int, int, int] = (210, 180, 140)  # Tan
     text: str = "WALL"
     noun: str = "wall"
 
@@ -238,7 +236,7 @@ class WallTextObject(TextObject):
 @dataclass(eq=False)
 class StopTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_push_0_1"))
-    color: Tuple[int, int, int] = (220, 20, 60)  # Crimson
+    color: tuple[int, int, int] = (220, 20, 60)  # Crimson
     text: str = "STOP"
     is_property: bool = True
     property: Property = Property.STOP
@@ -252,7 +250,7 @@ class StopTextObject(TextObject):
 @dataclass(eq=False)
 class PushTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_push_0_1"))
-    color: Tuple[int, int, int] = (144, 238, 144)  # Light green
+    color: tuple[int, int, int] = (144, 238, 144)  # Light green
     text: str = "PUSH"
     is_property: bool = True
     property: Property = Property.PUSH
@@ -266,7 +264,7 @@ class PushTextObject(TextObject):
 @dataclass(eq=False)
 class RockTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_04_4"))
-    color: Tuple[int, int, int] = (192, 192, 192)  # Silver
+    color: tuple[int, int, int] = (192, 192, 192)  # Silver
     text: str = "ROCK"
     noun: str = "rock"
 
@@ -279,7 +277,7 @@ class RockTextObject(TextObject):
 @dataclass(eq=False)
 class FlagTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_06_4"))
-    color: Tuple[int, int, int] = (255, 255, 102)  # Light yellow
+    color: tuple[int, int, int] = (255, 255, 102)  # Light yellow
     text: str = "FLAG"
     noun: str = "flag"
 
@@ -292,7 +290,7 @@ class FlagTextObject(TextObject):
 @dataclass(eq=False)
 class WinTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_win_0_1"))
-    color: Tuple[int, int, int] = (255, 215, 0)  # Gold
+    color: tuple[int, int, int] = (255, 215, 0)  # Gold
     text: str = "WIN"
     is_property: bool = True
     property: Property = Property.WIN
@@ -306,7 +304,7 @@ class WinTextObject(TextObject):
 @dataclass(eq=False)
 class SinkTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_sink_0_1"))
-    color: Tuple[int, int, int] = (138, 43, 226)  # Blue violet
+    color: tuple[int, int, int] = (138, 43, 226)  # Blue violet
     text: str = "SINK"
     is_property: bool = True
     property: Property = Property.SINK
@@ -320,7 +318,7 @@ class SinkTextObject(TextObject):
 @dataclass(eq=False)
 class WaterTextObject(TextObject):
     sprite: np.ndarray = field(default_factory=lambda: load_icon("text_13_4"))
-    color: Tuple[int, int, int] = (135, 206, 235)  # Sky blue
+    color: tuple[int, int, int] = (135, 206, 235)  # Sky blue
     text: str = "WATER"
     noun: str = "water"
 
@@ -333,7 +331,7 @@ class WaterTextObject(TextObject):
 class Palette:
     """
     Color palette for object rendering.
-    
+
     Provides a consistent set of colors for the custom sprite system.
     Colors are used when official sprites are not available.
 

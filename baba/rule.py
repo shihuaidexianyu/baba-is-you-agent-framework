@@ -9,21 +9,19 @@ This module handles the core rule system that defines object behavior:
 Rules are the heart of Baba Is You's gameplay mechanics.
 """
 
-from typing import Dict, List, Optional, Set, Tuple
-
 from .properties import Property
-from .world_object import Object, TextObject, IsTextObject
+from .world_object import Object, TextObject
 
 
 class Rule:
     """
     Represents a rule in the game, e.g., 'BABA IS YOU'.
-    
+
     Rules have three parts:
     - Subject: The object type the rule applies to (e.g., 'BABA')
     - Verb: Currently only 'IS' is supported
     - Complement: Either a property (YOU, WIN, etc.) or another object type
-    
+
     Examples:
     - BABA IS YOU (gives BABA the YOU property)
     - FLAG IS WIN (gives FLAG the WIN property)
@@ -62,12 +60,12 @@ class Rule:
 class RuleExtractor:
     """
     Extracts rules from the game grid by scanning for text patterns.
-    
+
     Rules are formed when text objects are arranged in specific patterns:
     - Three consecutive text objects horizontally or vertically
     - Pattern: NOUN IS PROPERTY/NOUN
     - No gaps allowed between text objects
-    
+
     The extractor scans the entire grid looking for these patterns.
     """
 
@@ -80,14 +78,14 @@ class RuleExtractor:
         """
         self.registry = registry
 
-    def extract_rules(self, grid: List[List[Set[Object]]]) -> List[Rule]:
+    def extract_rules(self, grid: list[list[set[Object]]]) -> list[Rule]:
         """
         Extract all active rules from the grid.
-        
+
         Scans the grid in two passes:
         1. Horizontal scan: checks each row for rules reading left-to-right
         2. Vertical scan: checks each column for rules reading top-to-bottom
-        
+
         Only complete, properly formed rules are extracted.
 
         Args:
@@ -117,11 +115,11 @@ class RuleExtractor:
         return rules
 
     def _check_rule_at(
-        self, grid: List[List[Set[Object]]], x: int, y: int, dx: int, dy: int
-    ) -> Optional[Rule]:
+        self, grid: list[list[set[Object]]], x: int, y: int, dx: int, dy: int
+    ) -> Rule | None:
         """
         Check if there's a valid rule at the given position in the given direction.
-        
+
         Validation requirements:
         1. All three positions must contain text objects
         2. Middle position must be 'IS' verb
@@ -153,7 +151,7 @@ class RuleExtractor:
         # Position 1: Must be a noun (object type like BABA, ROCK, etc.)
         if not hasattr(text1, "noun") or not text1.noun:
             return None
-            
+
         # Position 2: Must be the verb IS
         if not (hasattr(text2, "verb") and text2.verb and text2.verb.lower() == "is"):
             return None
@@ -170,7 +168,7 @@ class RuleExtractor:
 
         return None
 
-    def _get_text_object(self, objects: Set[Object]) -> Optional[TextObject]:
+    def _get_text_object(self, objects: set[Object]) -> TextObject | None:
         """Get the text object from a set of objects, if any."""
         for obj in objects:
             if isinstance(obj, TextObject):
@@ -181,29 +179,29 @@ class RuleExtractor:
 class RuleManager:
     """
     Manages active rules and their effects on game objects.
-    
+
     The RuleManager is responsible for:
     - Storing the current set of active rules
     - Computing which objects have which properties
     - Determining object transformations
     - Answering queries about object behavior
-    
+
     When rules change (e.g., text is moved), the manager recomputes
     all properties and transformations.
     """
 
     def __init__(self):
         """Initialize the rule manager."""
-        self.rules: List[Rule] = []  # All active rules
+        self.rules: list[Rule] = []  # All active rules
         # Maps object names to their properties (e.g., {'BABA': {Property.YOU}})
-        self.properties: Dict[str, Set[Property]] = {}
+        self.properties: dict[str, set[Property]] = {}
         # Maps object names to what they transform into (e.g., {'ROCK': 'BABA'})
-        self.transformations: Dict[str, str] = {}
+        self.transformations: dict[str, str] = {}
 
-    def update_rules(self, rules: List[Rule]):
+    def update_rules(self, rules: list[Rule]):
         """
         Update the active rules and recompute properties and transformations.
-        
+
         This is called whenever the grid changes (after movement or transformation)
         to ensure rules reflect the current text arrangement.
 
@@ -217,7 +215,7 @@ class RuleManager:
     def _compute_properties(self):
         """
         Compute object properties from rules.
-        
+
         Processes each rule and assigns properties to objects.
         Properties are defined in the Property enum (YOU, WIN, PUSH, etc.).
         """
@@ -239,7 +237,7 @@ class RuleManager:
     def _compute_transformations(self):
         """
         Compute object transformations from rules.
-        
+
         Identifies rules where the complement is another object type
         rather than a property (e.g., ROCK IS BABA).
         """
@@ -256,7 +254,7 @@ class RuleManager:
                     # Store the transformation target
                     self.transformations[rule.subject] = rule.complement
 
-    def get_properties(self, object_name: str) -> Set[Property]:
+    def get_properties(self, object_name: str) -> set[Property]:
         """
         Get all properties for a given object type.
 
@@ -268,7 +266,7 @@ class RuleManager:
         """
         return self.properties.get(object_name.upper(), set())
 
-    def get_transformation(self, object_name: str) -> Optional[str]:
+    def get_transformation(self, object_name: str) -> str | None:
         """
         Get the transformation for a given object type.
 
@@ -283,7 +281,7 @@ class RuleManager:
     def has_property(self, object_name: str, property: Property) -> bool:
         """
         Check if an object type has a specific property.
-        
+
         This is the primary method used during gameplay to determine
         object behavior (can it move? does it block? etc.)
 
@@ -296,67 +294,47 @@ class RuleManager:
         """
         return property in self.get_properties(object_name)
 
-    def get_you_objects(self) -> List[str]:
+    def get_you_objects(self) -> list[str]:
         """
         Get all object types that have the YOU property.
 
         Returns:
             List of object type names
         """
-        return [
-            obj_name
-            for obj_name, props in self.properties.items()
-            if Property.YOU in props
-        ]
+        return [obj_name for obj_name, props in self.properties.items() if Property.YOU in props]
 
-    def get_win_objects(self) -> List[str]:
+    def get_win_objects(self) -> list[str]:
         """
         Get all object types that have the WIN property.
 
         Returns:
             List of object type names
         """
-        return [
-            obj_name
-            for obj_name, props in self.properties.items()
-            if Property.WIN in props
-        ]
+        return [obj_name for obj_name, props in self.properties.items() if Property.WIN in props]
 
-    def get_push_objects(self) -> List[str]:
+    def get_push_objects(self) -> list[str]:
         """
         Get all object types that have the PUSH property.
 
         Returns:
             List of object type names
         """
-        return [
-            obj_name
-            for obj_name, props in self.properties.items()
-            if Property.PUSH in props
-        ]
+        return [obj_name for obj_name, props in self.properties.items() if Property.PUSH in props]
 
-    def get_stop_objects(self) -> List[str]:
+    def get_stop_objects(self) -> list[str]:
         """
         Get all object types that have the STOP property.
 
         Returns:
             List of object type names
         """
-        return [
-            obj_name
-            for obj_name, props in self.properties.items()
-            if Property.STOP in props
-        ]
+        return [obj_name for obj_name, props in self.properties.items() if Property.STOP in props]
 
-    def get_sink_objects(self) -> List[str]:
+    def get_sink_objects(self) -> list[str]:
         """
         Get all object types that have the SINK property.
 
         Returns:
             List of object type names
         """
-        return [
-            obj_name
-            for obj_name, props in self.properties.items()
-            if Property.SINK in props
-        ]
+        return [obj_name for obj_name, props in self.properties.items() if Property.SINK in props]

@@ -1,9 +1,7 @@
 """Object registry system for Baba Is You."""
 
-from typing import Dict, List, Optional, Type
-
-from .world_object import Object
 from .all_objects import ALL_OBJECTS, ALL_TEXT_OBJECTS
+from .world_object import Object
 
 
 class Registry:
@@ -11,10 +9,10 @@ class Registry:
 
     def __init__(self):
         """Initialize the registry."""
-        self.objects: Dict[str, Object] = {}
-        self.text_objects: Dict[str, Object] = {}
+        self.objects: dict[str, Object] = {}
+        self.text_objects: dict[str, Object] = {}
         self.type_id_counter = 0
-        
+
         # Register default objects
         self._register_defaults()
 
@@ -23,14 +21,14 @@ class Registry:
         # Register all game objects
         for name, obj_class in ALL_OBJECTS.items():
             self.register_object(name, obj_class)
-        
+
         # Register all text objects
         for name, text_class in ALL_TEXT_OBJECTS.items():
             # Extract the base name (remove 'text_' prefix)
-            base_name = name[5:] if name.startswith('text_') else name
+            base_name = name[5:] if name.startswith("text_") else name
             self.register_text_object(base_name, text_class)
 
-    def register_object(self, name: str, obj_class: Type[Object]):
+    def register_object(self, name: str, obj_class: type[Object]):
         """
         Register a game object.
 
@@ -43,7 +41,7 @@ class Registry:
         obj.type_id = self._get_next_type_id()
         self.objects[name.lower()] = obj
 
-    def register_text_object(self, name: str, obj_class: Type[Object]):
+    def register_text_object(self, name: str, obj_class: type[Object]):
         """
         Register a text object.
 
@@ -61,7 +59,7 @@ class Registry:
         self.type_id_counter += 1
         return self.type_id_counter
 
-    def get_object(self, name: str) -> Optional[Object]:
+    def get_object(self, name: str) -> Object | None:
         """
         Get a game object by name.
 
@@ -73,7 +71,7 @@ class Registry:
         """
         return self.objects.get(name.lower())
 
-    def get_text_object(self, name: str) -> Optional[Object]:
+    def get_text_object(self, name: str) -> Object | None:
         """
         Get a text object by name.
 
@@ -85,15 +83,15 @@ class Registry:
         """
         return self.text_objects.get(name.lower())
 
-    def get_all_objects(self) -> List[Object]:
+    def get_all_objects(self) -> list[Object]:
         """Get all registered game objects."""
         return list(self.objects.values())
 
-    def get_all_text_objects(self) -> List[Object]:
+    def get_all_text_objects(self) -> list[Object]:
         """Get all registered text objects."""
         return list(self.text_objects.values())
 
-    def get_object_by_type_id(self, type_id: int) -> Optional[Object]:
+    def get_object_by_type_id(self, type_id: int) -> Object | None:
         """
         Get an object by its type ID.
 
@@ -107,15 +105,15 @@ class Registry:
         for obj in self.objects.values():
             if obj.type_id == type_id:
                 return obj
-        
+
         # Search in text objects
         for obj in self.text_objects.values():
             if obj.type_id == type_id:
                 return obj
-        
+
         return None
 
-    def create_instance(self, name: str, is_text: bool = False) -> Optional[Object]:
+    def create_instance(self, name: str, is_text: bool = False) -> Object | None:
         """
         Create a new instance of an object.
 
@@ -127,13 +125,10 @@ class Registry:
             New instance of the object if found, None otherwise
         """
         import copy
-        
-        if is_text:
-            obj = self.get_text_object(name)
-        else:
-            obj = self.get_object(name)
-        
+
+        obj = self.get_text_object(name) if is_text else self.get_object(name)
+
         if obj:
             return copy.deepcopy(obj)
-        
+
         return None

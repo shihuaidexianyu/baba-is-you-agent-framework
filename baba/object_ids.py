@@ -157,7 +157,7 @@ ID_TO_NAME = {
     152: "default_152",
     153: "default_153",
     154: "default_154",
-    155: "default_155"
+    155: "default_155",
 }
 
 # Create reverse mapping
@@ -180,8 +180,7 @@ COMMON_OBJECTS = {
     "grass": 9,
     "hedge": 11,
     "lava": 13,
-    
-    # Text objects  
+    # Text objects
     "text_baba": 46,
     "text_keke": 47,
     "text_rock": 51,
@@ -191,14 +190,12 @@ COMMON_OBJECTS = {
     "text_skull": 62,
     "text_key": 61,
     "text_door": 60,
-    
     # Verbs
     "text_is": 106,
     "text_and": 107,
     "text_has": 110,
     "text_make": 111,
     "text_not": 108,
-    
     # Properties
     "text_you": 90,
     "text_win": 91,
@@ -213,7 +210,6 @@ COMMON_OBJECTS = {
     "text_shut": 101,
     "text_weak": 102,
     "text_float": 103,
-    
     # Special
     "text_empty": 45,
     "text_all": 115,
