@@ -65,10 +65,13 @@ Successfully implemented all 120+ Baba Is You objects, fixed the rule creation s
 
 ### Remaining Tasks
 
-1. **Implement Claude Code Agent**
-   - Create working agent under `/agents/claude_code.py`
-   - Should use Claude API to play Baba Is You
-   - Integrate with the Agent framework
+1. **Implement Claude Code Agent** ✅ DONE
+   - Created working agent under `/agents/claude_code_agent.py`
+   - Uses Claude Code SDK to play Baba Is You
+   - Integrated with the Agent framework
+   - Optimized for speed using `continue_conversation` option
+   - Added timeout protection and error handling
+   - Successfully tested on simple environment (won in 6 steps)
 
 2. **Refactor Agent/EpisodePlayer Architecture** ✅ DONE
    - Created Gym-like Environment API (reset, step, render)

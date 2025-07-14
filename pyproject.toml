@@ -23,6 +23,7 @@ dependencies = [
 agent = [
     "claude-code-sdk",
     "anyio>=3.0",
+    "typing-extensions>=4.0",
 ]
 dev = [
     "pytest>=8.0",
