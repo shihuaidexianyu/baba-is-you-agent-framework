@@ -8,6 +8,7 @@ This document provides essential context for Claude Code when working on this re
 - [Level Loader](docs/level_loader_documentation.md) - How to load official levels
 - [Object Reference](docs/object_reference.md) - Complete list of all 120+ objects
 - [Agent Framework](agent/CLAUDE.md) - How to create custom AI agents
+- [Claude Code Agent Design](docs/claude_code_agent_design.md) - Claude agent implementation details
 - [Test Suite](tests/README.md) - Running and writing tests
 
 ## Core Philosophy: LEAN AND CLEAN
