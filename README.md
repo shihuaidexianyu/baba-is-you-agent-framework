@@ -1,6 +1,6 @@
 # Baba Is AGI
 
-> **⚠️ Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
+> **Important**: This project includes a level loader and sprite system that can work with official Baba Is You game files. These features **require you to own the game on Steam**. The project works without these files using custom ASCII sprites and built-in environments.
 
 A Python implementation of Baba Is You designed for AI agent development. Build autonomous agents to solve puzzles through rule manipulation and strategic planning.
 
@@ -14,13 +14,13 @@ A Python implementation of Baba Is You designed for AI agent development. Build 
 </tr>
 <tr>
 <td align="center"><b>Simple</b></td>
-<td align="center"><img src="docs/gameplay_simple_demo.gif" width="240"><br/>✅ Solves in 6 steps<br/><i>Uses BFS to find direct path</i></td>
-<td align="center"><img src="docs/gameplay_simple_claude.gif" width="240"><br/>✅ Solves in 6 steps<br/><i>Reasons: "Direct path to flag"</i></td>
+<td align="center"><img src="docs/gameplay_simple_demo.gif" width="240"><br/>Solves in 6 steps<br/><i>Uses BFS to find direct path</i></td>
+<td align="center"><img src="docs/gameplay_simple_claude.gif" width="240"><br/>Solves in 6 steps<br/><i>Reasons: "Direct path to flag"</i></td>
 </tr>
 <tr>
 <td align="center"><b>Push Puzzle</b></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>⚠️ Gets stuck after pushing rocks<br/><i>BFS handles physics but not rule manipulation</i></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>🤔 Attempts various strategies<br/><i>Reasons about pushing rocks and changing rules</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>Gets stuck after pushing rocks<br/><i>BFS handles physics but not rule manipulation</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>Attempts various strategies<br/><i>Reasons about pushing rocks and changing rules</i></td>
 </tr>
 </table>
 
@@ -51,7 +51,7 @@ pixi install
 
 ### Optional: Official Game Content (Requires Game Ownership)
 
-**⚠️ IMPORTANT**: The following features require you to own Baba Is You on Steam:
+**IMPORTANT**: The following features require you to own Baba Is You on Steam:
 - Loading official game sprites
 - Loading official level files (.l format)
 
@@ -91,7 +91,7 @@ pixi run list-envs
 
 ### Load Official Levels
 
-**⚠️ Requires game ownership**: This feature only works if you own Baba Is You on Steam.
+**Requires game ownership**: This feature only works if you own Baba Is You on Steam.
 
 ```python
 from baba.level_loader import LevelLoader
