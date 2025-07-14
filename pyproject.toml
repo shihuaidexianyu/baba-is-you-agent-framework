@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "baba-is-agi"
+version = "0.1.0"
+description = "Agentic programs for playing Baba Is You"
+readme = "README.md"
+requires-python = ">=3.8,<3.12"
+authors = [
+    {name = "femtomc"},
+]
+dependencies = [
+    "numpy>=1.21",
+    "matplotlib>=3.5",
+    "opencv-python>=4.5",
+    "pygame>=2.1",
+    "pillow>=9.0",
+]
+
+[project.optional-dependencies]
+agent = [
+    "claude-code-sdk",
+    "anyio>=3.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["baba*", "agent*"]
+exclude = ["tests*", "scripts*", "docs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["baba", "agent"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

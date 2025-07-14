@@ -68,3 +68,11 @@ baba_is_eval/commands/*.lua
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Copyrighted game assets - DO NOT COMMIT
+baba/assets/sprites/*.png
+# But keep the directory structure
+!baba/assets/sprites/.gitkeep
+
+# Local config
+config.local.toml

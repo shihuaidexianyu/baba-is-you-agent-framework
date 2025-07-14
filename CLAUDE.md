@@ -1,204 +1,154 @@
-# Baba Is AGI - Claude Development Guide
+# Claude Code Context for Baba Is AGI
 
-This project creates an autonomous agent that plays Baba Is You using the Claude Code SDK and MCP (Model Control Protocol).
+This document provides essential context for Claude Code when working on this repository.
 
-## Project Structure
+## Documentation
 
+- [Level Format](docs/level_format_analysis.md) - Baba Is You file format details
+- [Level Loader](docs/level_loader_documentation.md) - How to load official levels
+- [Object Reference](docs/object_reference.md) - Complete list of all 120+ objects
+- [Agent Framework](agent/CLAUDE.md) - How to create custom AI agents
+- [Test Suite](tests/README.md) - Running and writing tests
+
+## Core Philosophy: LEAN AND CLEAN
+
+This is a **research project**. Keep the codebase minimal and focused:
+
+- **NO backwards compatibility layers** - We move fast and break things
+- **NO deprecation warnings** - Just change the API when needed
+- **NO unnecessary abstractions** - Write simple, direct code
+- **NO defensive programming** - Assume competent users
+- **NO compatibility shims** - One way to do things
+- **REMOVE code liberally** - If it's not actively used, delete it
+
+When in doubt, choose simplicity over compatibility. This is research code that should be easy to understand, modify, and experiment with.
+
+## Project Overview
+
+Python implementation of Baba Is You designed for building AI agents. The project includes:
+- Complete game engine with rule manipulation mechanics
+- 14 pre-built environments of varying difficulty
+- Agent framework for building autonomous players
+- Visual rendering with Pygame
+- Managed with Pixi for consistent environments across platforms
+
+## Key Technical Details
+
+### Pixi Dependency Management
+
+This project uses **Pixi** for environment and dependency management. Pixi ensures consistent Python environments across all platforms without the need for manual virtualenv setup or path manipulation.
+
+**Important Pixi Guidelines:**
+- NEVER use `sys.path` manipulation in Python files - Pixi handles all path setup
+- NEVER manually install packages with pip - add them to `pixi.toml` instead
+- All scripts should have corresponding pixi tasks defined in `pixi.toml`
+- Always run commands through pixi: `pixi run <task-name>`
+
+**Initial Setup:**
+```bash
+pixi install               # Install dependencies
+pixi run install-dev       # Install package in editable mode
+```
+
+**Available Pixi Tasks:**
+```bash
+# Core functionality
+pixi run play              # Play the game interactively
+pixi run test              # Run test suite
+
+# Agent tasks
+pixi run agent             # Run the default agent
+pixi run agent-visual      # Run agent with GUI visualization
+pixi run agent-local       # Run local autonomous agent
+pixi run agent-api         # Run Claude API agent (requires key)
+pixi run watch-agent       # Watch agent play (legacy)
+
+# Environment and sprites
+pixi run list-envs         # List all available environments
+pixi run setup-sprites     # Copy official sprites from Steam
+pixi run demo-sprites      # Demo sprite rendering
+pixi run sprite-showcase   # Show all available sprites
+
+# Development
+pixi run example-agent     # Run example random agent
+pixi run custom-level      # Demo custom level creation
+```
+
+**Adding New Dependencies:**
+Edit `pixi.toml` and add to the `[dependencies]` section:
+```toml
+[dependencies]
+new-package = ">=1.0"
+```
+
+Then run `pixi install` to update the environment.
+
+### Project Structure
 ```
 baba-is-agi/
-├── agent/                # Agent implementation
-│   ├── baba_agent_sdk.py # Main agent using Claude Code SDK
-│   ├── test_connection.py # MCP connection tester
-│   ├── pixi.toml         # Python dependencies (deprecated)
-│   ├── pixi.lock         # Pixi lock file
-│   └── README.md         # User documentation
-├── baba_is_eval/         # MCP server for game interface (git submodule)
-│   ├── game_mcp.py       # MCP server with pyautogui for some actions
-│   ├── io.lua            # Lua mod for game communication
-│   ├── help_rules.json   # Game rules documentation
-│   ├── setup.sh          # Installation script
-│   └── README.md         # Setup instructions
-├── scripts/              # Orchestration scripts
-│   ├── play_game.py      # Main orchestration script
-│   └── setup_game.py     # Setup script
-├── pixi.toml             # Root pixi configuration
-├── config.toml           # Game and agent configuration
-├── README.md             # Quick start guide
-├── CLAUDE.md             # This file
-└── MCP_IMPROVEMENTS.md   # MCP improvements documentation
+├── baba/                 # Core game implementation
+│   ├── grid.py           # Game grid and main logic
+│   ├── world_object.py   # Game objects and text blocks
+│   ├── rule.py           # Rule parsing and management
+│   ├── properties.py     # Game properties (YOU, WIN, STOP, etc.)
+│   ├── rendering.py      # Basic rendering utilities
+│   ├── sprites.py        # Custom sprite generation
+│   ├── sprite_loader.py  # Loads official sprites if available
+│   ├── envs.py           # All game environments (14 total)
+│   └── assets/sprites/   # Directory for official game sprites (gitignored)
+├── agent/                # Agent implementations
+│   ├── baba_agent.py     # All agent types in single module
+│   └── README.md         # Agent documentation
+├── scripts/              # Utility scripts
+└── pixi.toml            # Dependency management
 ```
 
-## Architecture
+### Sprite System
 
-### Communication Flow
-1. **Game ↔ Lua Mod**: The `io.lua` file hooks into Baba Is You to read/write game state
-2. **Lua Mod ↔ File System**: Game state written to `world_data.txt`, commands read from `commands/*.lua`
-3. **MCP Server ↔ Files**: `game_mcp.py` reads state files and writes command files
-4. **Claude ↔ MCP**: Claude Code SDK connects to MCP server and uses tools
-5. **Agent ↔ Claude**: `baba_agent_sdk.py` orchestrates Claude to play the game
+The game uses a dual sprite system:
+1. **Custom sprites** (always available): ASCII-art based sprites defined in `sprites.py`
+2. **Official sprites** (optional): Real game sprites from Steam installation
 
-### Key Design Decisions
-- **Hybrid control**: Movement via Lua commands, some actions (enter, restart) use pyautogui
-- **State persistence**: Game state saved to INI file for reliable reading
-- **Command queue**: Numbered Lua files ensure proper command ordering
-- **MCP tools**: Clean interface for game actions (move, undo, restart, etc.)
-- **TOML configuration**: All paths and settings in `config.toml`
-- **Submodule architecture**: `baba_is_eval` is a git submodule for independent updates
+**Important**: Official sprites are copyrighted and should NEVER be committed to git. They are:
+- Stored in `baba/assets/sprites/` (entire directory is gitignored)
+- Automatically detected and used if present
+- Fall back to custom sprites if not found
 
-## Running the Agent
-
-1. **Prerequisites**:
-   - Baba Is You installed (Steam version tested)
-   - Python 3.11+
-   - `ANTHROPIC_API_KEY` environment variable set
-   - Pixi package manager installed
-
-2. **Setup** (one-time):
-   ```bash
-   # Clone the repository with submodules
-   git clone --recursive https://github.com/femtomc/baba-is-agi.git
-   cd baba-is-agi
-   
-   # Install dependencies
-   pixi install
-   
-   # Run setup to configure game path and install mod
-   pixi run setup
-   ```
-
-3. **Run**:
-   ```bash
-   # Play a specific level (automatically starts game, MCP server, and agent)
-   pixi run play 1  # Play level 1
-   pixi run play 5  # Play level 5
-   
-   # Play default level from config.toml
-   pixi run play
-   
-   # Advanced options
-   pixi run play 1 --no-game  # Don't start game (assume it's running)
-   pixi run play --mcp-only   # Only start MCP server
-   ```
-
-## MCP Tools Available
-
-- `enter_level(level: str)`: Enter a level (e.g., "1", "2", "3")
-- `get_game_state()`: Get current board as ASCII grid
-- `execute_commands(commands: str)`: Move with "up,down,left,right"
-- `game_rules(topic: str)`: Get help on game mechanics
-- `restart_level()`: Restart current level
-- `undo_multiple(n: int)`: Undo n moves
-- `leave_level()`: Exit level (quits game)
-
-## Key Concepts
-
-### Game State Format
-The game state is displayed as an ASCII grid:
-```
-y/x |  1  |  2  |  3  
-----+-----+-----+-----
- 1  |     | baba|     
- 2  | wall| flag| text_is
-```
-
-Objects on same tile show with `<` separator: `wall<text_push`
-
-### Rule System
-- Rules form from text: `BABA IS YOU`, `WALL IS STOP`, `FLAG IS WIN`
-- Text blocks can be pushed to modify rules
-- Breaking rules changes game mechanics instantly
-
-### Agent Strategy
-The agent should:
-1. Identify active rules by scanning for text patterns
-2. Determine what it controls (IS YOU)
-3. Find win conditions (IS WIN)
-4. Plan rule modifications if needed
-5. Execute movement to achieve goals
-
-## Common Development Tasks
-
-### Testing MCP Connection
+To set up official sprites (only for users who own the game):
 ```bash
-pixi run test-mcp
+pixi run setup-sprites
 ```
 
-### Modifying Agent Behavior
-Edit the prompt in `baba_agent_sdk.py` to change how Claude approaches the game.
+### Environment Interface
 
-### Adding New MCP Tools
-1. Add tool method in `game_mcp.py` with `@mcp.tool()` decorator
-2. Implement game interaction via Lua commands
-3. Update agent prompt to mention new tool
+The game environments follow a custom interface (not OpenAI Gym):
+- `env.reset()` returns a Grid object
+- `env.step(action)` takes string actions ("up", "down", "left", "right")
+- `env.step()` returns tuple: (grid, won, lost)
+- The Grid object has methods like `render()` and properties like `rule_manager`
 
-### Debugging Game State
-- Check `/Data/Worlds/baba/world_data.txt` for raw state
-- Look in `/Data/baba_is_eval/commands/` for command files
-- Game must be running and level loaded for state updates
+### Agent Development
 
-## Troubleshooting
+When developing agents:
+- Use `Property` enum from `properties.py` for rule checking
+- Access grid cells with `grid.grid[y][x]` (returns set of Objects)
+- Check properties with `grid.rule_manager.has_property(obj_name, Property.YOU)`
+- Text objects have `is_text = True`
 
-### "No state available"
-- Ensure game is running and level is loaded
-- Run `setup.sh` again
-- Check file permissions on game directories
+### Common Pitfalls
 
-### Commands not executing
-- Verify command files being created in `commands/` directory
-- Check `io.lua` is properly loaded (restart game after setup.sh)
-- Ensure no syntax errors in Lua command files
+1. **Circular imports**: Be careful with imports between rule.py, world_object.py, and properties.py
+2. **Object hashing**: Objects must be hashable to be stored in grid sets
+3. **String formatting**: Avoid nested f-strings in list comprehensions
+4. **Grid coordinates**: Grid uses [y][x] indexing, not [x][y]
 
-### MCP connection fails
-- Check game path in `config.toml` matches your installation
-- Verify all Python dependencies installed with `pixi install`
-- Test with `pixi run test-mcp` first
+### Testing
 
-## Performance Considerations
-
-- **State polling**: Currently polls file system, could use file watchers
-- **Command latency**: ~0.5s delay for command execution
-- **Claude turns**: Limited to 50 turns per session to control costs
-
-## Future Improvements
-
-1. **Better level navigation**: Currently hardcoded for levels 1-7
-2. **State diffing**: Show what changed between moves
-3. **Planning mode**: Let Claude plan multiple moves ahead
-4. **Parallel execution**: Run multiple game instances
-5. **Learning**: Store successful solutions for replay
-6. **Vision**: Use screenshots for more complex scenarios
-7. **WebSocket MCP**: Replace file polling with real-time updates
-
-## Code Style
-
-- Use type hints for function parameters
-- Document MCP tools thoroughly 
-- Keep agent prompts clear and structured
-- Test changes with `test_connection.py` first
-
-## Configuration
-
-### Environment Variables
-- `ANTHROPIC_API_KEY`: Required for Claude API access
-
-### config.toml
-All game and agent settings are configured in `config.toml`:
-```toml
-[game]
-path = "/path/to/Baba Is You"
-
-[mcp]
-port = 5173
-host = "localhost"
-
-[agent]
-max_turns = 50
-default_level = "1"
-verbose = true
+To test the game:
+```bash
+pixi run play           # Play interactively
+pixi run agent-local    # Watch autonomous AI play
+pixi run agent-visual   # Watch AI with GUI visualization
+pixi run list-envs      # See all available environments
+pixi run test           # Run test suite
 ```
-
-## Security Notes
-
-- MCP server only exposes game control, no file system access
-- Command validation prevents arbitrary Lua execution
-- State files use restricted paths only

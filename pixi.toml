@@ -1,28 +1,45 @@
 [project]
 name = "baba-is-agi"
 version = "0.1.0"
-description = "Autonomous agent that plays Baba Is You using Claude Code SDK and MCP"
+description = "Agentic programs for playing Baba Is You"
 authors = ["femtomc"]
 channels = ["conda-forge"]
-platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
-
-[dependencies]
-python = ">=3.11,<3.13"
-pip = "*"
-
-[pypi-dependencies]
-claude-code-sdk = "*"
-mcp = "*"
-pydantic = "*"
-fastmcp = "*"
-configparser = "*"
-pyyaml = "*"
-pyautogui = "*"
-pillow = "*"
-psutil = "*"
-toml = "*"
+platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [tasks]
+# Setup
+install = "pip install -e ."
+install-agent = "pip install -e .[agent]"
+
+# Playing and testing
 play = "python scripts/play_game.py"
-setup = "python scripts/setup_game.py"
-test-mcp = "cd agent && python test_connection.py"
+play-manual = "python scripts/play_manual.py"
+test = "python -m pytest tests/"
+test-verbose = "python -m pytest tests/ -vv"
+test-coverage = "python -m pytest tests/ --cov=baba --cov=agent --cov-report=term-missing"
+test-unit = "python -m pytest tests/ -m 'not integration'"
+test-integration = "python -m pytest tests/ -m integration"
+
+# Agent tasks (deprecated - use 'play' instead)
+agent = "python -m agent.baba_agent"
+
+# Environment and sprite tasks
+list-envs = "python scripts/list_environments.py"
+setup-sprites = "python scripts/setup_sprites.py"
+demo-sprites = "python scripts/demo_sprites.py"
+sprite-showcase = "python scripts/sprite_showcase.py"
+
+# Development tasks
+example-agent = "python scripts/example_agent.py"
+custom-level = "python scripts/custom_level.py"
+test-loader = "python scripts/test_level_loader.py"
+show-level = "python scripts/show_level_ascii.py"
+viz-level = "python scripts/visualize_level.py"
+
+
+[dependencies]
+python = ">=3.8,<3.12"
+pip = "*"
+
+[environments]
+default = []
