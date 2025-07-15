@@ -20,7 +20,7 @@ A Python implementation of Baba Is You for testing AI agents. This repository pr
 <tr>
 <td align="center"><b>Push Puzzle</b></td>
 <td align="center"><img src="docs/gameplay_push_puzzle_demo_stuck.gif" width="240"><br/>20 steps: Pushes rocks, gets stuck<br/><i>BFS pathfinding with push handling</i></td>
-<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>50 steps: Attempts a few exploration strategies<br/><i>but has trouble reasoning spatially</i></td>
+<td align="center"><img src="docs/gameplay_push_puzzle_claude.gif" width="240"><br/>50 steps: Attempts a few exploration strategies<br/>but has trouble reasoning spatially</td>
 </tr>
 </table>
 
