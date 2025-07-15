@@ -189,15 +189,26 @@ Rules are formed by arranging text blocks:
 
 ```
 baba-is-agi/
-├── baba/                # Core game engine
-│   ├── grid.py         # Game grid and mechanics
-│   ├── rule.py         # Rule parsing system
-│   ├── world_object.py # Game objects
-│   └── envs.py         # Pre-built environments
-├── agents/             # Example agent implementations
-├── scripts/            # Utility scripts
-├── tests/              # Comprehensive test suite (102 tests)
-└── docs/               # Documentation
+├── baba/                 # Core game implementation
+│   ├── grid.py           # Game grid and main logic
+│   ├── world_object.py   # Game objects and text blocks
+│   ├── rule.py           # Rule parsing and management
+│   ├── properties.py     # Game properties (YOU, WIN, STOP, etc.)
+│   ├── rendering.py      # Basic rendering utilities
+│   ├── sprites.py        # Custom ASCII sprite generation
+│   ├── sprite_loader.py  # Loads official sprites if available
+│   ├── level_loader.py   # Loads official Baba Is You levels
+│   ├── envs.py           # All game environments (14 total)
+│   ├── agent.py          # Base Agent class
+│   └── assets/sprites/   # Directory for official game sprites (gitignored)
+├── agents/               # Agent implementations
+│   ├── random_agent.py   # Simple random agent
+│   ├── demo_agent.py     # Greedy pathfinding agent
+│   └── claude_code_agent.py # Claude API agent
+├── scripts/              # Utility scripts
+├── tests/                # Comprehensive test suite (102 tests)
+├── docs/                 # Documentation
+└── pixi.toml            # Dependency management
 ```
 
 ## Available Environments
