@@ -28,15 +28,15 @@ class ClaudeCodeAgent(Agent):
         super().__init__("Claude Code Agent")
         self.verbose = verbose
         self.conversation_history = []  # Track conversation for context
+        self.state_history = []  # Track game states
         self.episode_steps = 0
-        self.session_active = False
         self.last_reasoning = "Starting game..."  # Store reasoning for UI display
 
     def reset(self):  # noqa: B027
         """Reset the agent for a new episode."""
         self.conversation_history = []
+        self.state_history = []
         self.episode_steps = 0
-        self.session_active = False
         if self.verbose:
             print("\n=== Starting new Claude Code session ===")
 
@@ -57,14 +57,19 @@ class ClaudeCodeAgent(Agent):
 
         # Get action from Claude
         action = asyncio.run(self._get_action_async(state_description, observation))
+
+        # Store the state that led to this action
+        self.state_history.append(state_description)
+
         return action
 
     async def _get_action_async(self, state_description: str, observation: Grid) -> str:
         """Ask Claude Code for the next action given the game state."""
-        # Build minimal prompt for speed
+        # Build prompt with history
         if self.episode_steps == 1:
             prompt = f"""Baba Is You puzzle. Remember: YOU must touch WIN to win. You can push objects.
 
+Current state:
 {state_description}
 
 What's your move? Respond with only JSON:
@@ -72,17 +77,39 @@ What's your move? Respond with only JSON:
 
 Your JSON response: """
         else:
+            # Include action history with key state changes
+            history_summary = "\nGame history:\n"
+
+            # Show all actions in a more concise format
+            for i, (action, reasoning) in enumerate(self.conversation_history, 1):
+                history_summary += f"{i}. {action}: {reasoning}\n"
+
+            # Add a summary of key observations from recent states
+            if len(self.state_history) >= 3:
+                history_summary += "\nKey observations from recent states:\n"
+                # Extract key info from last few states
+                for i, state in enumerate(self.state_history[-3:], len(self.state_history) - 2):
+                    # Extract just the key positions line
+                    lines = state.split("\n")
+                    for line in lines:
+                        if "YOU) at" in line or "WIN) at" in line:
+                            history_summary += f"Step {i}: {line.strip()}\n"
+
             prompt = f"""Step {self.episode_steps}:
+
+{history_summary}
+
+Current state:
 {state_description}
 
 Next move as JSON: """
 
         # Use continue_conversation after first message
         options = ClaudeCodeOptions(
-            max_turns=1,
+            max_turns=None,  # Allow unlimited turns for thinking
             model="claude-opus-4-20250514",  # Use Claude 4 Opus (latest model)
-            system_prompt='You are playing Baba Is You. To win: move YOUR object to touch a WIN object. You can push objects and text. Pushing text changes rules. ALWAYS respond with only valid JSON: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right.',
-            continue_conversation=self.session_active,
+            system_prompt='You are playing Baba Is You. To win: move YOUR object to touch a WIN object. You can push objects and text. Pushing text changes rules. The X boundary is a solid wall - you cannot move through it or push objects through it! ALWAYS respond with only valid JSON: {"action": "<direction>", "reasoning": "<brief explanation>"}. Direction must be one of: up, down, left, right.',
+            continue_conversation=self.episode_steps > 1,
             permission_mode="bypassPermissions",  # No prompts during game
         )
 
@@ -107,9 +134,6 @@ Next move as JSON: """
             if self.verbose:
                 print(f"\n[Step {self.episode_steps}] Error: {e}")
             response = ""
-
-        # Mark session as active after first query
-        self.session_active = True
 
         if self.verbose:
             if response:
@@ -190,8 +214,8 @@ Next move as JSON: """
             if action is None:
                 print(">>> Failed to parse response, falling back to heuristic")
 
-        # Store action in history
-        self.conversation_history.append((action, "taken"))
+        # Store action and reasoning in history
+        self.conversation_history.append((action, reasoning))
 
         return action
 
@@ -202,6 +226,12 @@ Next move as JSON: """
         # Important game mechanics reminder
         lines.append("GAME RULES: To win, YOU must touch an object that IS WIN.")
         lines.append("You can push objects and text. Pushing text can change rules.")
+        lines.append(
+            "IMPORTANT: The X boundary is solid - you cannot move through it or push objects through it!"
+        )
+        lines.append(
+            "Objects pushed against the boundary will not move. Plan your pushes carefully."
+        )
         lines.append("")
 
         # Current rules
@@ -223,44 +253,73 @@ Next move as JSON: """
 
         # Grid representation
         lines.append("\nGrid Layout:")
+        lines.append("- Map boundary: X (solid wall - cannot move or push through)")
         lines.append("- Empty cells: .")
         lines.append("- Objects (game pieces): lowercase (e.g., baba, rock, flag)")
         lines.append("- Text (rule pieces): UPPERCASE (e.g., BABA, IS, YOU)")
+        lines.append("- Multiple objects in same cell: joined with + (e.g., rock+flag)")
         lines.append("")
 
         # Find max object name length for proper spacing
         max_len = 4  # Minimum width
         for y in range(grid.height):
             for x in range(grid.width):
-                for obj in grid.grid[y][x]:
-                    max_len = max(max_len, len(obj.name))
+                cell_objs = list(grid.grid[y][x])
+                if cell_objs:
+                    # Account for multiple objects with + separator
+                    names = []
+                    for obj in cell_objs:
+                        if obj.is_text:
+                            name = obj.name.upper()
+                            if name.endswith("_TEXT"):
+                                name = name[:-5]
+                        else:
+                            name = obj.name.lower()
+                        names.append(name)
+                    cell_content = "+".join(names)
+                    max_len = max(max_len, len(cell_content))
 
-        # Add column numbers for reference
-        col_header = "   "
+        # Add column numbers for reference with boundary markers
+        col_header = "     "
         for x in range(grid.width):
             col_header += str(x).center(max_len + 1)
         lines.append(col_header)
-        lines.append("   " + "-" * (grid.width * (max_len + 1)))
 
-        # Build grid with proper spacing
+        # Top boundary
+        boundary_line = "   X" + ("X" * (grid.width * (max_len + 1))) + "X"
+        lines.append(boundary_line)
+
+        # Build grid with proper spacing and side boundaries
         for y in range(grid.height):
-            row_str = f"{y}| "
+            row_str = f"{y:2}|X"
             for x in range(grid.width):
                 cell_objs = list(grid.grid[y][x])
                 if not cell_objs:
                     row_str += ".".center(max_len) + " "
                 else:
-                    # If multiple objects in cell, show first one
-                    obj = cell_objs[0]
-                    if obj.is_text:
-                        # Remove _TEXT suffix for clarity
-                        name = obj.name.upper()
-                        if name.endswith("_TEXT"):
-                            name = name[:-5]
-                    else:
-                        name = obj.name.lower()
-                    row_str += name.center(max_len) + " "
-            lines.append(row_str.rstrip())
+                    # Show all objects in cell (overlapping)
+                    names = []
+                    for obj in cell_objs:
+                        if obj.is_text:
+                            # Remove _TEXT suffix for clarity
+                            name = obj.name.upper()
+                            if name.endswith("_TEXT"):
+                                name = name[:-5]
+                        else:
+                            name = obj.name.lower()
+                        names.append(name)
+
+                    # Join multiple objects with +
+                    cell_content = "+".join(names)
+                    if len(cell_content) > max_len:
+                        # Truncate if too long but show there are multiple
+                        cell_content = cell_content[: max_len - 1] + "+"
+                    row_str += cell_content.center(max_len) + " "
+            row_str = row_str.rstrip() + "X"
+            lines.append(row_str)
+
+        # Bottom boundary
+        lines.append(boundary_line)
 
         # Add legend for what's in the grid
         lines.append("\nObjects in grid:")

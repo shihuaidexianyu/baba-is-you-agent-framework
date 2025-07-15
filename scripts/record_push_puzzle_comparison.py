@@ -51,7 +51,7 @@ def main():
         demo_agent,
         "push_puzzle",
         "docs/gameplay_push_puzzle_demo_stuck.gif",
-        max_steps=20,  # Same steps for both agents
+        max_steps=20,  # Keep demo agent at 20 steps
     )
 
     # Record Claude Code agent
@@ -60,7 +60,7 @@ def main():
         claude_agent,
         "push_puzzle",
         "docs/gameplay_push_puzzle_claude.gif",
-        max_steps=20,  # Same steps for both agents
+        max_steps=50,  # Allow Claude up to 50 steps
     )
 
     print("\n=== Summary ===")
