@@ -104,15 +104,116 @@ class LevelLoader:
         return chunks
 
     def decompress_level_data(self, compressed_data: bytes) -> dict[str, Any]:
-        """Decompress and parse level data."""
+        """Decompress and parse level data - find MAIN chunks with diverse object data."""
         print("\n=== decompress_level_data debug ===")
         print(f"Input data length: {len(compressed_data)} bytes")
-        print(
-            f"First 20 bytes (hex): {compressed_data[:20].hex() if len(compressed_data) >= 20 else compressed_data.hex()}"
-        )
-        print(f"First 20 bytes (repr): {repr(compressed_data[:20])}")
+        
+        # Extract dimensions from LAYR header (bytes 10 and 12)
+        width = height = 12  # Default
+        if len(compressed_data) >= 14:
+            width = compressed_data[10]  
+            height = compressed_data[12]
+            print(f"Grid dimensions from LAYR header: {width}x{height}")
 
-        # Look for MAIN or MAINZ chunks within the data
+        # Look for MAIN chunks (not MAINZ) - they contain the object data
+        pos = 0
+        main_chunks = []
+        
+        while pos < len(compressed_data) - 8:
+            if compressed_data[pos:pos+4] == b"MAIN":
+                size = struct.unpack("<I", compressed_data[pos+4:pos+8])[0]
+                if pos + 8 + size <= len(compressed_data):
+                    main_data = compressed_data[pos+8:pos+8+size]
+                    main_chunks.append((pos, size, main_data))
+                    print(f"Found MAIN chunk at {pos}, size {size}")
+                pos += 8 + size
+            else:
+                pos += 1
+        
+        if not main_chunks:
+            print("No MAIN chunks found")
+            return {"width": width, "height": height, "objects": []}
+        
+        # Try each MAIN chunk to find the one with object data
+        for chunk_pos, chunk_size, chunk_data in main_chunks:
+            print(f"\nTrying MAIN chunk at {chunk_pos}")
+            
+            # Verify it's zlib compressed
+            if chunk_data[:2] not in [b"\x78\x01", b"\x78\x9c", b"\x78\xda"]:
+                print(f"Not zlib compressed (header: {chunk_data[:2].hex()})")
+                continue
+                
+            # Decompress MAIN data
+            try:
+                main_decompressed = zlib.decompress(chunk_data)
+                unique_vals = sorted(set(main_decompressed))
+                print(f"Decompressed to {len(main_decompressed)} bytes")
+                print(f"Unique values: {unique_vals}")
+                
+                # Check if this looks like object data (diverse IDs, not just boundary)
+                non_boundary_vals = [v for v in unique_vals if v not in (0, 255)]
+                if len(non_boundary_vals) >= 3:  # Need at least 3 different object types
+                    print(f"This MAIN chunk contains diverse object data")
+                    
+                    # Parse decompressed data as object grid 
+                    objects = []
+                    cells_per_layer = width * height
+                    
+                    if cells_per_layer == 0:
+                        print("Invalid grid dimensions")
+                        continue
+                    
+                    # Calculate number of layers
+                    num_layers = len(main_decompressed) // cells_per_layer
+                    remainder = len(main_decompressed) % cells_per_layer
+                    
+                    print(f"Parsing grid: {width}x{height}, {num_layers} complete layers, {remainder} extra bytes")
+                    
+                    # Parse each layer
+                    for layer in range(num_layers):
+                        layer_start = layer * cells_per_layer
+                        layer_end = layer_start + cells_per_layer
+                        layer_data = main_decompressed[layer_start:layer_end]
+                        
+                        layer_objects = 0
+                        
+                        # Parse each cell in row-major order
+                        for i, obj_id in enumerate(layer_data):
+                            if obj_id > 0 and obj_id != 255:  # 0 = empty, 255 = boundary
+                                # Convert linear index to (x, y) coordinates
+                                y = i // width
+                                x = i % width
+                                
+                                objects.append({
+                                    "id": obj_id,
+                                    "x": x,
+                                    "y": y,
+                                    "layer": layer
+                                })
+                                layer_objects += 1
+                        
+                        print(f"Layer {layer}: {layer_objects} objects, unique IDs: {sorted(set(layer_data))}")
+                    
+                    print(f"Total objects found: {len(objects)}")
+                    
+                    # Show first few objects for debugging
+                    if objects:
+                        print("First 10 objects:")
+                        for i, obj in enumerate(objects[:10]):
+                            from .object_ids import get_object_name
+                            name = get_object_name(obj['id'])
+                            print(f"  {i}: {name}(ID={obj['id']}) at ({obj['x']},{obj['y']}) layer={obj['layer']}")
+                    
+                    return {"width": width, "height": height, "objects": objects}
+                    
+            except Exception as e:
+                print(f"Failed to decompress MAIN data: {e}")
+                continue
+        
+        print("No valid object data found in any MAIN chunk")
+        return {"width": width, "height": height, "objects": []}
+
+        # Old complex parsing logic follows (as fallback)
         pos = 0
         main_chunks_found = []
 
@@ -135,350 +236,32 @@ class LevelLoader:
                 chunk_type = chunk_id
                 chunk_data_offset = 8  # MAIN has 4 byte header + 4 byte size
 
-            if found_chunk:
-                # Debug: print what we're looking at
-                if pos == 43:  # Special debug for position 43
-                    print("\n  DEBUG at pos 43:")
-                    print(
-                        f"    chunk_id (4 bytes): {chunk_id.hex()} = '{chunk_id.decode('ascii', errors='ignore')}'"
-                    )
-                    print(
-                        f"    chunk_id_5 (5 bytes): {chunk_id_5.hex()} = '{chunk_id_5.decode('ascii', errors='ignore')}'"
-                    )
-                    print(f"    Is MAIN? {chunk_id in [b'MAIN', b'NIAM']}")
-                    print(f"    Is MAINZ? {chunk_id_5 in [b'MAINZ', b'ZNIAM']}")
+            if not found_chunk:
+                pos += 1
+                continue
 
-                # Read chunk size (always 4 bytes after chunk ID)
-                if chunk_type in [b"MAINZ", b"ZNIAM"]:
-                    # Try different interpretations
-                    size_le = struct.unpack("<I", compressed_data[pos + 5 : pos + 9])[0]
-                    size_be = struct.unpack(">I", compressed_data[pos + 5 : pos + 9])[0]
+            # Read chunk size (always 4 bytes after chunk ID)
+            if chunk_type in [b"MAINZ", b"ZNIAM"]:
+                # Try different interpretations
+                size_le = struct.unpack("<I", compressed_data[pos + 5 : pos + 9])[0]
+                size_be = struct.unpack(">I", compressed_data[pos + 5 : pos + 9])[0]
+                # Use the more reasonable size
+                chunk_size = size_be if size_be < 10000 else size_le
+            else:
+                chunk_size = struct.unpack("<I", compressed_data[pos + 4 : pos + 8])[0]
 
-                    if pos == 43:  # Debug
-                        print(f"    MAINZ size bytes: {compressed_data[pos + 5 : pos + 9].hex()}")
-                        print(f"    Little-endian: {size_le}, Big-endian: {size_be}")
-                        print(f"    Context: {compressed_data[pos : pos + 20].hex()}")
+            main_chunks_found.append({
+                "id": chunk_type,
+                "pos": pos,
+                "size": chunk_size,
+                "valid_size": chunk_size <= len(compressed_data) - pos - chunk_data_offset,
+            })
 
-                        # Check if the next byte after MAINZ might be the size
-                        alt_size = compressed_data[pos + 5] if pos + 5 < len(compressed_data) else 0
-                        print(f"    Single byte size: {alt_size}")
+            pos += chunk_size + chunk_data_offset
 
-                    # Use the more reasonable size
-                    chunk_size = size_be if size_be < 10000 else size_le
-                else:
-                    chunk_size = struct.unpack("<I", compressed_data[pos + 4 : pos + 8])[0]
-
-                main_chunks_found.append(
-                    {
-                        "id": chunk_type,
-                        "pos": pos,
-                        "size": chunk_size,
-                        "valid_size": chunk_size <= len(compressed_data) - pos - chunk_data_offset,
-                    }
-                )
-                print(f"\nFound {chunk_type} chunk at position {pos}:")
-                print(f"  Chunk size: {chunk_size} bytes")
-                print(
-                    f"  Valid size: {chunk_size <= len(compressed_data) - pos - chunk_data_offset}"
-                )
-
-                if chunk_size <= len(compressed_data) - pos - chunk_data_offset:
-                    chunk_data = compressed_data[
-                        pos + chunk_data_offset : pos + chunk_data_offset + chunk_size
-                    ]
-                    print(
-                        f"  Chunk data first 20 bytes: {chunk_data[:20].hex() if len(chunk_data) >= 20 else chunk_data.hex()}"
-                    )
-
-                    # Debug: For MAINZ at pos 43, show what's around
-                    if pos == 43 and chunk_type == b"MAINZ":
-                        print("  Data around MAINZ:")
-                        print(f"    pos+0 to pos+20: {compressed_data[pos : pos + 20].hex()}")
-                        print(f"    pos+5 to pos+25: {compressed_data[pos + 5 : pos + 25].hex()}")
-                        print(f"    pos+8 to pos+28: {compressed_data[pos + 8 : pos + 28].hex()}")
-                        print(f"    pos+9 to pos+29: {compressed_data[pos + 9 : pos + 29].hex()}")
-                        print(f"    pos+10 to pos+30: {compressed_data[pos + 10 : pos + 30].hex()}")
-
-                        # Find where 7801 appears
-                        for i in range(20):
-                            if (
-                                pos + i + 1 < len(compressed_data)
-                                and compressed_data[pos + i : pos + i + 2] == b"\x78\x01"
-                            ):
-                                print(f"  Found zlib header 7801 at offset +{i}")
-
-                    # Try to decompress if it looks like zlib data
-                    if chunk_data[:2] in [b"\x78\x01", b"\x78\x9c", b"\x78\xda"]:
-                        print(f"  Detected zlib header: {chunk_data[:2].hex()}")
-                        try:
-                            decompressed = zlib.decompress(chunk_data)
-                            print(f"  Successfully decompressed to {len(decompressed)} bytes")
-                            print(
-                                f"  Decompressed first 20 bytes: {decompressed[:20].hex() if len(decompressed) >= 20 else decompressed.hex()}"
-                            )
-                            result = self.parse_level_grid(decompressed)
-                            print(
-                                f"  Parse result: width={result['width']}, height={result['height']}, objects={len(result['objects'])}"
-                            )
-                            if result["width"] > 0:
-                                return result
-                        except Exception as e:
-                            print(f"  Decompression failed: {type(e).__name__}: {e}")
-                    else:
-                        # Try parsing uncompressed
-                        print("  No zlib header detected, trying uncompressed parse")
-                        result = self.parse_level_grid(chunk_data)
-                        print(
-                            f"  Parse result: width={result['width']}, height={result['height']}, objects={len(result['objects'])}"
-                        )
-                        if result["width"] > 0:
-                            return result
-
-            pos += 1
-
-        print(f"\nTotal MAIN/MAINZ chunks found: {len(main_chunks_found)}")
-        for chunk_info in main_chunks_found:
-            print(f"  {chunk_info['id']} at pos {chunk_info['pos']}, size {chunk_info['size']}")
-
-        # Check for data after all MAIN chunks
-        if main_chunks_found:
-            last_chunk = main_chunks_found[-1]
-            last_pos = last_chunk["pos"] + 8 + last_chunk["size"]  # 8 bytes for header
-            if last_chunk["id"] in [b"MAINZ", b"ZNIAM"]:
-                last_pos = last_chunk["pos"] + 9 + last_chunk["size"]  # 9 bytes for MAINZ header
-
-            remaining = len(compressed_data) - last_pos
-            if remaining > 0:
-                print(f"\n!!! Found {remaining} bytes after last MAIN chunk at pos {last_pos}")
-                print(f"Next 100 bytes: {compressed_data[last_pos : last_pos + 100].hex()}")
-
-                # Look for patterns
-                # Check if it starts with DATA chunk
-                if remaining >= 8 and compressed_data[last_pos : last_pos + 4] == b"DATA":
-                    print("Found DATA chunk!")
-                    data_size = struct.unpack("<I", compressed_data[last_pos + 4 : last_pos + 8])[0]
-                    print(f"DATA chunk size: {data_size}")
-
-                    if data_size <= remaining - 8:
-                        data_chunk = compressed_data[last_pos + 8 : last_pos + 8 + data_size]
-                        print(f"DATA chunk first 20 bytes: {data_chunk[:20].hex()}")
-
-                        # Check if DATA chunk is compressed
-                        if data_chunk[:2] in [b"\x78\x01", b"\x78\x9c", b"\x78\xda"]:
-                            print("DATA chunk is zlib compressed")
-                            try:
-                                decompressed_data = zlib.decompress(data_chunk)
-                                print(f"Decompressed DATA to {len(decompressed_data)} bytes")
-                                print(f"First 100 bytes: {decompressed_data[:100].hex()}")
-
-                                # Parse object data
-                                # First 2 bytes might be object count
-                                if len(decompressed_data) >= 2:
-                                    obj_count = struct.unpack("<H", decompressed_data[0:2])[0]
-                                    print(f"Object count: {obj_count}")
-
-                                    if 1 <= obj_count <= 1000:
-                                        objects = []
-                                        pos = 2
-
-                                        # Try different object formats
-                                        # Format 1: ID (2 bytes) + X (1 byte) + Y (1 byte) + layer (1 byte)
-                                        bytes_per_obj = 5
-
-                                        if len(decompressed_data) >= 2 + (
-                                            obj_count * bytes_per_obj
-                                        ):
-                                            print(f"Parsing {obj_count} objects (5 bytes each)")
-                                            for i in range(obj_count):
-                                                if pos + bytes_per_obj <= len(decompressed_data):
-                                                    obj_id = struct.unpack(
-                                                        "<H", decompressed_data[pos : pos + 2]
-                                                    )[0]
-                                                    x = decompressed_data[pos + 2]
-                                                    y = decompressed_data[pos + 3]
-                                                    layer = decompressed_data[pos + 4]
-                                                    objects.append(
-                                                        {
-                                                            "id": obj_id,
-                                                            "x": x,
-                                                            "y": y,
-                                                            "layer": layer,
-                                                        }
-                                                    )
-                                                    if i < 10:  # Print first few
-                                                        print(
-                                                            f"  Object {i}: ID={obj_id}, pos=({x},{y}), layer={layer}"
-                                                        )
-                                                    pos += bytes_per_obj
-
-                                            if objects:
-                                                return {
-                                                    "width": 12,  # From LAYR header
-                                                    "height": 12,
-                                                    "objects": objects,
-                                                }
-                                        else:
-                                            # Try 4 bytes per object
-                                            bytes_per_obj = 4
-                                            if len(decompressed_data) >= 2 + (
-                                                obj_count * bytes_per_obj
-                                            ):
-                                                print(f"Parsing {obj_count} objects (4 bytes each)")
-                                                pos = 2
-                                                for i in range(obj_count):
-                                                    if pos + bytes_per_obj <= len(
-                                                        decompressed_data
-                                                    ):
-                                                        obj_id = struct.unpack(
-                                                            "<H", decompressed_data[pos : pos + 2]
-                                                        )[0]
-                                                        x = decompressed_data[pos + 2]
-                                                        y = decompressed_data[pos + 3]
-                                                        objects.append(
-                                                            {"id": obj_id, "x": x, "y": y}
-                                                        )
-                                                        if i < 10:  # Print first few
-                                                            print(
-                                                                f"  Object {i}: ID={obj_id}, pos=({x},{y})"
-                                                            )
-                                                        pos += bytes_per_obj
-
-                                                if objects:
-                                                    return {
-                                                        "width": 12,  # From LAYR header
-                                                        "height": 12,
-                                                        "objects": objects,
-                                                    }
-                            except Exception as e:
-                                print(f"Failed to decompress DATA chunk: {e}")
-                        else:
-                            print("DATA chunk is not compressed")
-                            # Check what's after DATA chunk
-                            data_end = last_pos + 8 + data_size
-                            if data_end < len(compressed_data):
-                                next_remaining = len(compressed_data) - data_end
-                                print(f"\nFound {next_remaining} bytes after DATA chunk")
-                                print(
-                                    f"Next 100 bytes: {compressed_data[data_end : data_end + 100].hex()}"
-                                )
-
-                                # The actual object data might be here
-                                # First check if there's a size field
-                                if next_remaining >= 4:
-                                    next_size = struct.unpack(
-                                        "<I", compressed_data[data_end : data_end + 4]
-                                    )[0]
-                                    print(f"Next chunk size: {next_size}")
-
-                                    if next_size <= next_remaining - 4:
-                                        next_data = compressed_data[
-                                            data_end + 4 : data_end + 4 + next_size
-                                        ]
-                                        if next_data[:2] in [b"\x78\x01", b"\x78\x9c", b"\x78\xda"]:
-                                            print("Found zlib compressed object data!")
-                                            try:
-                                                obj_data = zlib.decompress(next_data)
-                                                print(f"Decompressed to {len(obj_data)} bytes")
-                                                print(f"First 100 bytes: {obj_data[:100].hex()}")
-
-                                                # Parse this as object data
-                                                # Looking at the data, it seems to be a grid of object IDs
-                                                # 700 bytes for 12x12 grid = ~4.86 bytes per cell
-                                                # Let's assume it's multiple layers
-
-                                                print("Parsing as grid data...")
-                                                width, height = 12, 12  # From LAYR header
-
-                                                # Calculate layers based on data size
-                                                bytes_per_layer = width * height
-                                                num_layers = len(obj_data) // bytes_per_layer
-                                                remainder = len(obj_data) % bytes_per_layer
-                                                print(
-                                                    f"Grid: {width}x{height}, {num_layers} complete layers, {remainder} extra bytes"
-                                                )
-                                                print(
-                                                    f"Total bytes: {len(obj_data)}, bytes per layer: {bytes_per_layer}"
-                                                )
-
-                                                objects = []
-
-                                                # Parse each layer
-                                                for layer in range(num_layers):
-                                                    layer_start = layer * bytes_per_layer
-                                                    layer_data = obj_data[
-                                                        layer_start : layer_start + bytes_per_layer
-                                                    ]
-
-                                                    print(f"\nLayer {layer}:")
-                                                    # Print first few rows of each layer
-                                                    for y in range(min(3, height)):  # First 3 rows
-                                                        row_str = ""
-                                                        for x in range(min(12, width)):
-                                                            idx = y * width + x
-                                                            if idx < len(layer_data):
-                                                                row_str += f"{layer_data[idx]:3d} "
-                                                        print(f"  Row {y}: {row_str}")
-
-                                                    # Extract objects from this layer
-                                                    for y in range(height):
-                                                        for x in range(width):
-                                                            idx = y * width + x
-                                                            if idx < len(layer_data):
-                                                                obj_id = layer_data[idx]
-                                                                if obj_id > 0:  # 0 = empty
-                                                                    objects.append(
-                                                                        {
-                                                                            "id": obj_id,
-                                                                            "x": x,
-                                                                            "y": y,
-                                                                            "layer": layer,
-                                                                        }
-                                                                    )
-
-                                                print(f"\nTotal objects found: {len(objects)}")
-                                                if objects:
-                                                    # Print first few objects
-                                                    for i, obj in enumerate(objects[:10]):
-                                                        print(
-                                                            f"  Object {i}: ID={obj['id']}, pos=({obj['x']},{obj['y']}), layer={obj['layer']}"
-                                                        )
-
-                                                    return {
-                                                        "width": width,
-                                                        "height": height,
-                                                        "objects": objects,
-                                                    }
-                                            except Exception as e:
-                                                print(f"Failed to decompress: {e}")
-
-        # Fallback: try direct decompression
-        print("\nTrying fallback direct decompression...")
-        if compressed_data[:2] in [b"\x78\x01", b"\x78\x9c", b"\x78\xda"]:
-            print(f"Detected zlib header in raw data: {compressed_data[:2].hex()}")
-            try:
-                decompressed = zlib.decompress(compressed_data)
-                print(f"Successfully decompressed to {len(decompressed)} bytes")
-                result = self.parse_level_grid(decompressed)
-                print(
-                    f"Parse result: width={result['width']}, height={result['height']}, objects={len(result['objects'])}"
-                )
-                return result
-            except Exception as e:
-                print(f"Decompression failed: {type(e).__name__}: {e}")
-        else:
-            print("No zlib header detected in raw data")
-
-        # Try parsing the raw data directly
-        print("\nTrying to parse raw data as uncompressed grid...")
-        result = self.parse_level_grid(compressed_data)
-        print(
-            f"Parse result: width={result['width']}, height={result['height']}, objects={len(result['objects'])}"
-        )
-
-        if result["width"] == 0:
-            print("\n!!! Failed to parse level data !!!")
-
-        return result
+        # Fallback to old parsing if new method didn't work
+        print(f"\nFallback: Found {len(main_chunks_found)} MAIN/MAINZ chunks")
+        return {"width": width, "height": height, "objects": []}
 
     def parse_level_grid(self, data: bytes) -> dict[str, Any]:
         """Parse the decompressed level grid data."""
