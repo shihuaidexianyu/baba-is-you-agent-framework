@@ -123,27 +123,46 @@ class Environment:
 
 
 class OfficialLevelEnvironment(Environment):
-    """从本地官方关卡目录加载特定关卡的环境。
+    """从本地 map 根目录加载特定关卡（平铺式）。
 
-    - 关卡文件应放在工作区的 `map/` 目录下，结构类似：
-      map/<world>/<n>level.l 和 map/<world>/<n>level.ld
-    - 使用 `LevelLoader(worlds_path=Path('map'))` 读取。
+    指定方式：
+    - level_name: 如 "1level"、"n1level"（自动补 .l/.ld）
+    - level_file: 关卡 .l 文件的路径（相对或绝对）
     """
 
-    def __init__(self, world: str, level: int, map_dir: str = "map"):
-        self.world = world
-        self.level = level
+    def __init__(
+        self,
+        *,
+        level_name: str | None = None,
+        level_file: str | Path | None = None,
+        map_dir: str = "map",
+    ):
+        self.level_name = level_name
+        self.level_file = Path(level_file) if level_file else None
         self.map_dir = map_dir
-        # 先创建一个占位网格，实际关卡会在 setup() 中加载替换
-        super().__init__(width=12, height=12, name=f"{world}:{level}")
+
+        title = Path(level_file).name if level_file else (level_name or "level")
+        super().__init__(width=12, height=12, name=title)
 
     def setup(self):
         loader = LevelLoader(worlds_path=Path(self.map_dir))
-        grid = loader.load_level(self.world, self.level, self.registry)
+
+        grid = None
+        # 1) 明确给了 level_file：允许绝对或相对路径
+        if self.level_file is not None:
+            # 若给了绝对路径，覆写 loader 跟路径
+            lfile = self.level_file
+            base = lfile.parent
+            name = lfile.stem
+            temp_loader = LevelLoader(worlds_path=base)
+            grid = temp_loader.load_level_flat(name, self.registry)
+        # 2) 平铺名
+        elif self.level_name is not None:
+            grid = loader.load_level_flat(self.level_name, self.registry)
+
         if grid is None:
             # 加载失败则创建一个简单提示关卡
             self.grid = Grid(self.width, self.height, self.registry)
-            # 放一个文本：BABA IS YOU，FLAG IS WIN，和一个 FLAG
             baba = self.registry.create_instance("baba")
             self.grid.place_object(baba, 1, 1)
             baba_t = self.registry.create_instance("baba", is_text=True)
@@ -160,13 +179,12 @@ class OfficialLevelEnvironment(Environment):
             self.grid.place_object(flag_t, 7, 1)
             self.grid.place_object(is_t2, 8, 1)
             self.grid.place_object(win_t, 9, 1)
-            self.name = f"{self.world}:{self.level} (fallback)"
+            # 更新标题
+            self.name = f"{self.level_name or (self.level_file and Path(self.level_file).name) or 'level'} (fallback)"
         else:
-            # 使用加载的网格与尺寸
             self.grid = grid
             self.width = grid.width
             self.height = grid.height
-            self.name = f"{self.world}:{self.level}"
 
 
 """

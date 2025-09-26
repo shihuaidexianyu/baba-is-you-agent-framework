@@ -13,9 +13,9 @@ from .envs import OfficialLevelEnvironment
 from pathlib import Path
 
 
-def play_official(world: str, level: int, map_dir: str = "map", cell_size: int = 48, fps: int = 30) -> dict:
-    """从本地 map 目录加载并游玩指定官方关卡。"""
-    env = OfficialLevelEnvironment(world=world, level=level, map_dir=map_dir)
+def play_official_flat(level_name: str | None, level_file: str | None, map_dir: str = "map", cell_size: int = 48, fps: int = 30) -> dict:
+    """从本地 map 根目录加载并游玩指定官方关卡（平铺）。"""
+    env = OfficialLevelEnvironment(level_name=level_name, level_file=level_file, map_dir=map_dir)
     agent = UserAgent()
     return agent.play_episode(env=env, render=True, cell_size=cell_size, fps=fps, verbose=True)
 
@@ -60,71 +60,51 @@ For AI agents, see the agents/ directory:
 
     # 已移除 --list-envs
 
-    # Official level loading from local 'map' folder
+    # Official level loading from local 'map' folder (flat layout)
     parser.add_argument(
         "--map-dir",
         default="map",
-        help="Directory containing official level worlds (default: ./map)",
+        help="Directory containing official levels (default: ./map)",
     )
     parser.add_argument(
-        "--world",
-        help="World name to load from map directory (e.g., 'baba', 'new_adv')",
+        "--level-name",
+        help="Level filename without extension in map dir (e.g., '1level', 'n1level')",
     )
     parser.add_argument(
-        "--level",
-        type=int,
-        help="Level number within the world to load (e.g., 1, 2, 3)",
-    )
-    parser.add_argument(
-        "--list-worlds",
-        action="store_true",
-        help="List available worlds in map directory and exit",
+        "--level-file",
+        help="Path to a level .l file (absolute or relative)",
     )
     parser.add_argument(
         "--list-levels",
-        metavar="WORLD",
-        help="List available levels in the specified world and exit",
+        action="store_true",
+        help="List available levels in map directory and exit",
     )
 
     args = parser.parse_args()
 
     # 不再支持列出内置环境
 
-    # Handle listing worlds/levels in map directory
-    if args.list_worlds or args.list_levels:
+    # Handle listing levels in flat map directory
+    if args.list_levels:
         from .level_loader import LevelLoader
 
         loader = LevelLoader(worlds_path=Path(args.map_dir))
-        if args.list_worlds:
-            worlds = loader.list_worlds()
-            if not worlds:
-                print(f"No worlds found in {args.map_dir}")
-            else:
-                print("Worlds in map directory:")
-                for w in worlds:
-                    print(f"  - {w}")
-            return 0
-        if args.list_levels:
-            worlds = loader.list_worlds()
-            if args.list_levels not in worlds:
-                print(f"World '{args.list_levels}' not found in {args.map_dir}")
-                print("Available:")
-                for w in worlds:
-                    print(f"  - {w}")
-                return 1
-            levels = loader.list_levels(args.list_levels)
-            print(f"Levels in world '{args.list_levels}':")
-            for lv in levels:
-                print(f"  - {lv}")
-            return 0
+        names = loader.list_level_names()
+        if not names:
+            print(f"No levels found in {args.map_dir}")
+        else:
+            print("Levels in map directory:")
+            for n in names:
+                print(f"  - {n}")
+        return 0
 
     # Play the game
     try:
-        # 仅支持 world+level 路径
-        if not (args.world and args.level is not None):
-            print("Please provide --world and --level to play an official level from the local map directory.")
+        # 仅支持平铺：提供 --level-name 或 --level-file
+        if not (args.level_name or args.level_file):
+            print("Please provide --level-name (e.g., '1level') or --level-file (<path>.l)")
             return 1
-        play_official(world=args.world, level=args.level, map_dir=args.map_dir, cell_size=args.cell_size, fps=args.fps)
+        play_official_flat(level_name=args.level_name, level_file=args.level_file, map_dir=args.map_dir, cell_size=args.cell_size, fps=args.fps)
     except KeyboardInterrupt:
         print("\nGame interrupted by user")
 

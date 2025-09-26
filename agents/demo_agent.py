@@ -266,18 +266,20 @@ if __name__ == "__main__":
     import sys
     from baba.envs import OfficialLevelEnvironment
 
-    # 建议优先使用命令行：
-    #   python -m baba.play --world <world> --level <n> --map-dir map
-    # 如需脚本内运行，可通过环境变量指定 WORLD/LEVEL/MAP_DIR
-    world = os.environ.get("WORLD")
-    level = os.environ.get("LEVEL")
+    # 建议使用命令行（平铺式）：
+    #   python -m baba.play --level-name 1level --map-dir map
+    # 或指定文件：
+    #   python -m baba.play --level-file map/1level.l
+    # 如需脚本内运行，设置 LEVEL_NAME 或 LEVEL_FILE（可选 MAP_DIR）。
     map_dir = os.environ.get("MAP_DIR", "map")
-    if not (world and level):
-        print("Please set WORLD and LEVEL env vars, e.g., WORLD=baba LEVEL=1 python agents/demo_agent.py")
-        print("Or run via CLI: python -m baba.play --world <world> --level <n> --map-dir map")
+    level_name = os.environ.get("LEVEL_NAME")
+    level_file = os.environ.get("LEVEL_FILE")
+    if not (level_name or level_file):
+        print("Please set LEVEL_NAME (e.g., 1level) or LEVEL_FILE (path to .l)")
+        print("Or run via CLI: python -m baba.play --level-name 1level --map-dir map")
         sys.exit(1)
 
-    env = OfficialLevelEnvironment(world=world, level=int(level), map_dir=map_dir)
+    env = OfficialLevelEnvironment(level_name=level_name, level_file=level_file, map_dir=map_dir)
 
     # 创建 Agent 并开始游玩
     agent = DemoAgent()

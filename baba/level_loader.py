@@ -14,7 +14,7 @@ from .registration import Registry
 class LevelLoader:
     """Loads official Baba Is You level files (.l and .ld) from a local folder.
 
-    Expected layout: worlds_path/<world>/<n>level.l and optional <n>level.ld
+    仅支持平铺在根目录：map/<level_name>.l 与可选 map/<level_name>.ld
     """
 
     # Use the comprehensive object ID mappings from object_ids.py
@@ -627,37 +627,35 @@ class LevelLoader:
 
         return metadata
 
-    def load_level(self, world: str, level_num: int, registry: Registry) -> Grid | None:
-        """
-        Load a level from the official game files.
 
-        Args:
-            world: World name (e.g., 'baba', 'new_adv', 'museum')
-            level_num: Level number
-            registry: Object registry for creating game objects
+    # === Flat layout helpers (map root) ===
+    def load_level_flat(self, level_name: str, registry: Registry) -> Grid | None:
+        """Load a level when files are directly under map/.
 
-        Returns:
-            Grid object with the loaded level, or None if loading fails
+        参数：
+            level_name: 可为不带扩展的文件名（如 "1level"、"n1level"），
+                        也可包含 .l/.ld 扩展（优先读取 .l）。
+        返回：Grid 或 None
         """
-        level_name = f"{level_num}level"
-        l_path = self.worlds_path / world / f"{level_name}.l"
-        ld_path = self.worlds_path / world / f"{level_name}.ld"
+        # 规范化：去掉扩展，只保留 stem
+        name = level_name
+        if name.endswith(".l") or name.endswith(".ld"):
+            name = Path(name).stem
+
+        l_path = self.worlds_path / f"{name}.l"
+        ld_path = self.worlds_path / f"{name}.ld"
 
         if not l_path.exists():
             print(f"Level file not found: {l_path}")
             return None
 
-        # Load metadata
         metadata = self.load_level_metadata(ld_path)
 
-        # Read level data
         with open(l_path, "rb") as f:
             level_data = f.read()
 
-        # Parse chunks
         chunks = self.read_chunks(level_data)
-
-        print(f"\n=== Loading level {level_name} ===")
+        print(f"\n=== Loading level {name} (flat) ===")
         print(f"Level file size: {len(level_data)} bytes")
         print(f"Chunks found: {list(chunks.keys())}")
         for chunk_type, chunk_list in chunks.items():
@@ -665,7 +663,6 @@ class LevelLoader:
             for i, chunk in enumerate(chunk_list):
                 print(f"    Chunk {i}: {len(chunk)} bytes")
 
-        # Find and decompress level data from LAYR chunks
         level_info = None
         if "LAYR" in chunks:
             print(f"\nProcessing {len(chunks['LAYR'])} LAYR chunk(s)...")
@@ -676,21 +673,18 @@ class LevelLoader:
                     f"  First 20 bytes: {chunk_data[:20].hex() if len(chunk_data) >= 20 else chunk_data.hex()}"
                 )
 
-                # Extract dimensions from LAYR header
                 if len(chunk_data) >= 13:
                     width = chunk_data[10]
                     height = chunk_data[12]
                     print(f"  Dimensions from LAYR header: {width}x{height}")
                     print(f"  Header bytes 10-13: {chunk_data[10:14].hex()}")
 
-                    # Try to decompress the level data
                     result = self.decompress_level_data(chunk_data)
                     if result["width"] > 0:
                         level_info = result
                         print("  Successfully parsed level data!")
                         break
                     elif width > 0 and height > 0:
-                        # Use dimensions from LAYR header if parsing failed
                         print("  Using fallback dimensions from LAYR header")
                         level_info = {"width": width, "height": height, "objects": []}
                 else:
@@ -699,35 +693,25 @@ class LevelLoader:
             print("\nNo LAYR chunks found!")
 
         if not level_info:
-            print(f"\n!!! Could not parse level data for {level_name} !!!")
+            print(f"\n!!! Could not parse level data for {name} !!!")
             return None
 
-        # Use metadata dimensions if available
         if metadata["width"] > 0:
             level_info["width"] = metadata["width"]
         if metadata["height"] > 0:
             level_info["height"] = metadata["height"]
 
-        # Create grid
         grid = Grid(level_info["width"], level_info["height"], registry)
 
-        # Place objects
         missing_objects = set()
         placed_count = 0
-
-        # No longer need substitutions since we have all objects!
 
         for obj_data in level_info["objects"]:
             obj_name = get_object_name(obj_data["id"])
             if obj_name and obj_name != "empty":
-                # Check if it's a text object
                 is_text = obj_name.startswith("text_")
-
                 if is_text:
-                    # Strip 'text_' prefix for text object lookup
-                    base_name = obj_name[5:]  # Remove 'text_' prefix
-
-                    # Try to create text object
+                    base_name = obj_name[5:]
                     obj = registry.create_instance(base_name, is_text=True)
                     if obj:
                         grid.place_object(obj, obj_data["x"], obj_data["y"])
@@ -735,10 +719,7 @@ class LevelLoader:
                     else:
                         missing_objects.add(obj_name)
                 else:
-                    # No substitution needed - we have all objects
-
                     if obj_name in registry.objects:
-                        # Create a copy of the registered object
                         template_obj = registry.objects[obj_name]
                         obj = copy.deepcopy(template_obj)
                         grid.place_object(obj, obj_data["x"], obj_data["y"])
@@ -754,24 +735,13 @@ class LevelLoader:
 
         return grid
 
-    def list_worlds(self) -> list[str]:
-        """List all available worlds."""
+    def list_level_names(self) -> list[str]:
+        """列出 map 根目录中可用的关卡名（不带扩展）。"""
         if not self.worlds_path.exists():
             return []
-        return [d.name for d in self.worlds_path.iterdir() if d.is_dir()]
+        names = []
+        for file in self.worlds_path.glob("*level.l"):
+            names.append(file.stem)
+        return sorted(names)
 
-    def list_levels(self, world: str) -> list[int]:
-        """List all level numbers in a world."""
-        world_path = self.worlds_path / world
-        if not world_path.exists():
-            return []
-
-        levels = []
-        for file in world_path.glob("*level.l"):
-            try:
-                level_num = int(file.stem.replace("level", ""))
-                levels.append(level_num)
-            except ValueError:
-                continue
-
-        return sorted(levels)
+    # 删除了 world/level 分层相关的加载与列举接口
