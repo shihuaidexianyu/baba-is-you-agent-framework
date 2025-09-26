@@ -25,7 +25,7 @@ baba-is-agi/
 ```
 
 该仓库保留了用于实验所需的核心内容：Baba Is You 游戏引擎与两个基线 Agent（random 与 demo）。
-为保持清爽，已移除复杂的环境配置（如 Pixi/pyproject）；改为用 requirements.txt 直接 pip 安装。
+安装与运行基于 `requirements.txt` 进行 pip 安装。
 
 ## 包含组件
 

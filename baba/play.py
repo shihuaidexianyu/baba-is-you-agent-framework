@@ -27,18 +27,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Play interactively (default)
-  pixi run play
+    # 列出可用关卡
+    python -m baba.play --list-levels --map-dir map
 
-  # Play specific environment
-  pixi run play --env push_puzzle
+    # 游玩指定关卡（按名称）
+    python -m baba.play --level-name 1level --map-dir map
 
-  # Play with larger cells
-  pixi run play --cell-size 64
+    # 游玩指定关卡（按文件路径）
+    python -m baba.play --level-file map/1level.l
 
 For AI agents, see the agents/ directory:
-  python agents/random.py simple
-  python agents/claude-code.py simple
+    python agents/random_agent.py
+    python agents/demo_agent.py
 """,
     )
 
