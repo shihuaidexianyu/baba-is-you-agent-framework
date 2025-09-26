@@ -13,9 +13,11 @@ Baba Is You 的预配置关卡环境。
 """
 
 import numpy as np
+from pathlib import Path
 
 from .grid import Grid
 from .registration import Registry
+from .level_loader import LevelLoader
 
 
 class Environment:
@@ -77,6 +79,53 @@ class Environment:
             新创建的网格（观测）
         """
         self.grid = Grid(self.width, self.height, self.registry)
+    """从本地官方关卡目录加载特定关卡的环境。
+
+    - 关卡文件应放在工作区的 `map/` 目录下，结构类似：
+      map/<world>/<n>level.l 和 map/<world>/<n>level.ld
+    - 使用 `LevelLoader(worlds_path=Path('map'))` 读取。
+    """
+
+    def __init__(self, world: str, level: int, map_dir: str = "map"):
+        self.world = world
+        self.level = level
+        self.map_dir = map_dir
+
+        # 先创建一个占位网格，稍后在 setup() 中用真实关卡替换
+        super().__init__(width=12, height=12, name=f"{world}:{level}")
+
+    def setup(self):
+        loader = LevelLoader(worlds_path=Path(self.map_dir))
+        grid = loader.load_level(self.world, self.level, self.registry)
+        if grid is None:
+            # 加载失败则创建一个简单提示关卡
+            self.grid = Grid(self.width, self.height, self.registry)
+            # 放一个文本：BABA IS YOU，FLAG IS WIN，和一个 FLAG
+            baba = self.registry.create_instance("baba")
+            self.grid.place_object(baba, 1, 1)
+            baba_t = self.registry.create_instance("baba", is_text=True)
+            is_t = self.registry.create_instance("is", is_text=True)
+            you_t = self.registry.create_instance("you", is_text=True)
+            self.grid.place_object(baba_t, 1, 3)
+            self.grid.place_object(is_t, 2, 3)
+            self.grid.place_object(you_t, 3, 3)
+            flag = self.registry.create_instance("flag")
+            self.grid.place_object(flag, 8, 8)
+            flag_t = self.registry.create_instance("flag", is_text=True)
+            win_t = self.registry.create_instance("win", is_text=True)
+            is_t2 = self.registry.create_instance("is", is_text=True)
+            self.grid.place_object(flag_t, 7, 1)
+            self.grid.place_object(is_t2, 8, 1)
+            self.grid.place_object(win_t, 9, 1)
+            self.name = f"{self.world}:{self.level} (fallback)"
+        else:
+            # 使用加载的网格与尺寸
+            self.grid = grid
+            self.width = grid.width
+            self.height = grid.height
+            self.name = f"{self.world}:{self.level}"
+        # 更新规则
+        self.grid._update_rules()
         self.setup()
 
         # Update rules after setup

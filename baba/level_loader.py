@@ -1,4 +1,4 @@
-"""Loader for official Baba Is You level files."""
+"""Loader for official Baba Is You level files from a local directory (map/)."""
 
 import copy
 import struct
@@ -12,35 +12,18 @@ from .registration import Registry
 
 
 class LevelLoader:
-    """Loads official Baba Is You level files (.l and .ld)."""
+    """Loads official Baba Is You level files (.l and .ld) from a local folder.
+
+    Expected layout: worlds_path/<world>/<n>level.l and optional <n>level.ld
+    """
 
     # Use the comprehensive object ID mappings from object_ids.py
 
-    def __init__(self, game_path: Path | None = None):
-        """
-        Initialize the level loader.
+    def __init__(self, worlds_path: Path | str = "map"):
+        """Initialize with a local worlds root directory (default: ./map)."""
+        self.worlds_path = Path(worlds_path)
 
-        Args:
-            game_path: Path to Baba Is You installation. If None, uses default Steam location.
-        """
-        if game_path is None:
-            game_path = (
-                Path.home()
-                / "Library"
-                / "Application Support"
-                / "Steam"
-                / "steamapps"
-                / "common"
-                / "Baba Is You"
-            )
-
-        self.game_path = Path(game_path)
-        self.data_path = self.game_path / "Baba Is You.app" / "Contents" / "Resources" / "Data"
-        self.worlds_path = self.data_path / "Worlds"
-
-    def has_steam_levels(self) -> bool:
-        """Check if Steam levels are available."""
-        return self.worlds_path.exists() and self.worlds_path.is_dir()
+    # Removed Steam/installation probing; only local worlds_path is supported
 
     def read_chunks(self, data: bytes) -> dict[str, list[bytes]]:
         """Read chunk-based file format."""

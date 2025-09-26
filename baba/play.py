@@ -9,7 +9,8 @@ import argparse
 import sys
 
 from .agent import UserAgent
-from .envs import create_environment, list_environments
+from .envs import create_environment, list_environments, OfficialLevelEnvironment
+from pathlib import Path
 
 
 def play(
@@ -102,6 +103,32 @@ For AI agents, see the agents/ directory:
         help="List available environments and exit",
     )
 
+    # Official level loading from local 'map' folder
+    parser.add_argument(
+        "--map-dir",
+        default="map",
+        help="Directory containing official level worlds (default: ./map)",
+    )
+    parser.add_argument(
+        "--world",
+        help="World name to load from map directory (e.g., 'baba', 'new_adv')",
+    )
+    parser.add_argument(
+        "--level",
+        type=int,
+        help="Level number within the world to load (e.g., 1, 2, 3)",
+    )
+    parser.add_argument(
+        "--list-worlds",
+        action="store_true",
+        help="List available worlds in map directory and exit",
+    )
+    parser.add_argument(
+        "--list-levels",
+        metavar="WORLD",
+        help="List available levels in the specified world and exit",
+    )
+
     args = parser.parse_args()
 
     # Handle list environments
@@ -111,15 +138,50 @@ For AI agents, see the agents/ directory:
             print(f"  - {env_name}")
         return 0
 
+    # Handle listing worlds/levels in map directory
+    if args.list_worlds or args.list_levels:
+        from .level_loader import LevelLoader
+
+        loader = LevelLoader(worlds_path=Path(args.map_dir))
+        if args.list_worlds:
+            worlds = loader.list_worlds()
+            if not worlds:
+                print(f"No worlds found in {args.map_dir}")
+            else:
+                print("Worlds in map directory:")
+                for w in worlds:
+                    print(f"  - {w}")
+            return 0
+        if args.list_levels:
+            worlds = loader.list_worlds()
+            if args.list_levels not in worlds:
+                print(f"World '{args.list_levels}' not found in {args.map_dir}")
+                print("Available:")
+                for w in worlds:
+                    print(f"  - {w}")
+                return 1
+            levels = loader.list_levels(args.list_levels)
+            print(f"Levels in world '{args.list_levels}':")
+            for lv in levels:
+                print(f"  - {lv}")
+            return 0
+
     # Play the game
     try:
-        play(
-            env_name=args.env,
-            render=True,
-            cell_size=args.cell_size,
-            fps=args.fps,
-            verbose=True,
-        )
+        # If world and level are provided, load from map directory
+        if args.world and args.level is not None:
+            env = OfficialLevelEnvironment(world=args.world, level=args.level, map_dir=args.map_dir)
+            # Use UserAgent via play_episode directly
+            agent = UserAgent()
+            agent.play_episode(env=env, render=True, cell_size=args.cell_size, fps=args.fps, verbose=True)
+        else:
+            play(
+                env_name=args.env,
+                render=True,
+                cell_size=args.cell_size,
+                fps=args.fps,
+                verbose=True,
+            )
     except KeyboardInterrupt:
         print("\nGame interrupted by user")
 
