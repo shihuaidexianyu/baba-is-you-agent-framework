@@ -25,15 +25,18 @@ class RandomAgent(Agent):
 
 # 示例用法
 if __name__ == "__main__":
-    from baba import create_environment
+    import os
+    from baba.envs import OfficialLevelEnvironment
 
-    # Create agent and environment
+    # 建议直接使用命令行：
+    #   python -m baba.play --world <world> --level <n> --map-dir map
+    # 如需脚本内运行，设置环境变量 WORLD/LEVEL/MAP_DIR，然后执行本脚本。
+    world = os.environ.get("WORLD")
+    level = os.environ.get("LEVEL")
+    map_dir = os.environ.get("MAP_DIR", "map")
+    if not (world and level):
+        raise SystemExit("Please set WORLD and LEVEL env vars, or run via CLI: python -m baba.play --world <world> --level <n> --map-dir map")
+
+    env = OfficialLevelEnvironment(world=world, level=int(level), map_dir=map_dir)
     agent = RandomAgent()
-    env = create_environment("simple")
-
-    # Play one episode with visualization
     stats = agent.play_episode(env, render=True, verbose=True)
-
-    # Or play many episodes without visualization
-    # stats = agent.play_episodes(env, num_episodes=100, render=False)
-    # print(f"Win rate: {stats['win_rate']*100:.1f}%")

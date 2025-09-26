@@ -6,54 +6,32 @@ Baba Is You - Python implementation for AI agent development.
 # Agent system
 from .agent import Agent, UserAgent
 
-# Environment system
-from .envs import create_environment, list_environments
 from .grid import Grid
 from .play import main as play_main
-
-# Play functionality
-from .play import play
 from .properties import Property
 
 
-def make(env_name):
-    """
-    Create an environment by name.
-
-    Args:
-        env_name: Name of the environment
-
-    Returns:
-        Environment instance
-    """
-    return create_environment(env_name)
+def make(*args, **kwargs):  # Deprecated stub
+    """Deprecated: 内置环境已移除，请使用命令行参数 --world/--level 或 OfficialLevelEnvironment。"""
+    raise RuntimeError(
+        "Built-in environments have been removed. Use baba.play CLI with --world/--level or OfficialLevelEnvironment."
+    )
 
 
-def register(name, env_class):
-    """
-    Register a new environment.
-
-    Args:
-        name: Name for the environment
-        env_class: Environment class
-    """
-    from .envs import ENVIRONMENTS
-
-    ENVIRONMENTS[name] = env_class
+def register(*args, **kwargs):  # Deprecated stub
+    """Deprecated: 环境注册机制已移除。"""
+    raise RuntimeError("Environment registry has been removed.")
 
 
 __all__ = [
     # Core
     "make",
     "register",
-    "create_environment",
-    "list_environments",
     "Grid",
     "Property",
     # Agents
     "Agent",
     "UserAgent",
     # Play
-    "play",
     "play_main",
 ]

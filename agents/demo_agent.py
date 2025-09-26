@@ -262,18 +262,22 @@ class DemoAgent(Agent):
 
 # 示例用法
 if __name__ == "__main__":
+    import os
     import sys
+    from baba.envs import OfficialLevelEnvironment
 
-    from baba import create_environment
-
-    # 从命令行获取环境名或使用默认
-    env_name = sys.argv[1] if len(sys.argv) > 1 else "simple"
-
-    # 创建环境
-    env = create_environment(env_name)
-    if not env:
-        print(f"Unknown environment: {env_name}")
+    # 建议优先使用命令行：
+    #   python -m baba.play --world <world> --level <n> --map-dir map
+    # 如需脚本内运行，可通过环境变量指定 WORLD/LEVEL/MAP_DIR
+    world = os.environ.get("WORLD")
+    level = os.environ.get("LEVEL")
+    map_dir = os.environ.get("MAP_DIR", "map")
+    if not (world and level):
+        print("Please set WORLD and LEVEL env vars, e.g., WORLD=baba LEVEL=1 python agents/demo_agent.py")
+        print("Or run via CLI: python -m baba.play --world <world> --level <n> --map-dir map")
         sys.exit(1)
+
+    env = OfficialLevelEnvironment(world=world, level=int(level), map_dir=map_dir)
 
     # 创建 Agent 并开始游玩
     agent = DemoAgent()

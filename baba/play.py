@@ -9,50 +9,15 @@ import argparse
 import sys
 
 from .agent import UserAgent
-from .envs import create_environment, list_environments, OfficialLevelEnvironment
+from .envs import OfficialLevelEnvironment
 from pathlib import Path
 
 
-def play(
-    env_name: str = "simple",
-    render: bool = True,
-    cell_size: int = 48,
-    fps: int = 30,
-    verbose: bool = True,
-) -> dict:
-    """
-    以交互方式游玩 Baba Is You。
-
-    参数：
-        env_name: 要游玩的环境名称
-        render: 是否进行可视化渲染
-        cell_size: 每格像素大小
-        fps: 渲染的帧率
-        verbose: 是否打印信息
-
-    返回：
-        包含回合统计信息的字典
-    """
-    # Create environment
-    env = create_environment(env_name)
-    if not env:
-        print(f"Environment '{env_name}' not found.")
-        print(f"Available environments: {', '.join(list_environments())}")
-        sys.exit(1)
-
-    # Create user agent for interactive play
+def play_official(world: str, level: int, map_dir: str = "map", cell_size: int = 48, fps: int = 30) -> dict:
+    """从本地 map 目录加载并游玩指定官方关卡。"""
+    env = OfficialLevelEnvironment(world=world, level=level, map_dir=map_dir)
     agent = UserAgent()
-
-    # Play episode using new Agent API
-    stats = agent.play_episode(
-        env=env,
-        render=render,
-        cell_size=cell_size,
-        fps=fps,
-        verbose=verbose,
-    )
-
-    return stats
+    return agent.play_episode(env=env, render=True, cell_size=cell_size, fps=fps, verbose=True)
 
 
 def main():
@@ -77,11 +42,7 @@ For AI agents, see the agents/ directory:
 """,
     )
 
-    parser.add_argument(
-        "--env",
-        default="simple",
-        help="Environment to play (default: simple)",
-    )
+    # 内置环境已移除，仅支持本地 map 目录的官方关卡
 
     parser.add_argument(
         "--cell-size",
@@ -97,11 +58,7 @@ For AI agents, see the agents/ directory:
         help="Frames per second (default: 30)",
     )
 
-    parser.add_argument(
-        "--list-envs",
-        action="store_true",
-        help="List available environments and exit",
-    )
+    # 已移除 --list-envs
 
     # Official level loading from local 'map' folder
     parser.add_argument(
@@ -131,12 +88,7 @@ For AI agents, see the agents/ directory:
 
     args = parser.parse_args()
 
-    # Handle list environments
-    if args.list_envs:
-        print("Available environments:")
-        for env_name in sorted(list_environments()):
-            print(f"  - {env_name}")
-        return 0
+    # 不再支持列出内置环境
 
     # Handle listing worlds/levels in map directory
     if args.list_worlds or args.list_levels:
@@ -168,20 +120,11 @@ For AI agents, see the agents/ directory:
 
     # Play the game
     try:
-        # If world and level are provided, load from map directory
-        if args.world and args.level is not None:
-            env = OfficialLevelEnvironment(world=args.world, level=args.level, map_dir=args.map_dir)
-            # Use UserAgent via play_episode directly
-            agent = UserAgent()
-            agent.play_episode(env=env, render=True, cell_size=args.cell_size, fps=args.fps, verbose=True)
-        else:
-            play(
-                env_name=args.env,
-                render=True,
-                cell_size=args.cell_size,
-                fps=args.fps,
-                verbose=True,
-            )
+        # 仅支持 world+level 路径
+        if not (args.world and args.level is not None):
+            print("Please provide --world and --level to play an official level from the local map directory.")
+            return 1
+        play_official(world=args.world, level=args.level, map_dir=args.map_dir, cell_size=args.cell_size, fps=args.fps)
     except KeyboardInterrupt:
         print("\nGame interrupted by user")
 
