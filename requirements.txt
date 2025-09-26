@@ -1,0 +1,6 @@
+numpy>=1.26
+opencv-python>=4.10
+pygame>=2.5
+pillow>=10.0
+# 可选：若使用 sprite_loader 的 PNG/JPEG 处理
+# matplotlib 可移除（项目代码中未直接使用）
