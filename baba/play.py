@@ -1,8 +1,8 @@
 """
-Main entry point for playing Baba Is You.
+Baba Is You 的游玩入口。
 
-Provides a simple interface to play the game interactively.
-For AI agents, use the scripts in the agents/ directory.
+提供一个简单的交互式游玩接口。
+若要使用 AI Agent，请参考 agents/ 目录中的脚本。
 """
 
 import argparse
@@ -20,17 +20,17 @@ def play(
     verbose: bool = True,
 ) -> dict:
     """
-    Play Baba Is You interactively.
+    以交互方式游玩 Baba Is You。
 
-    Args:
-        env_name: Name of the environment to play
-        render: Whether to render visually
-        cell_size: Size of each cell in pixels
-        fps: Frames per second for rendering
-        verbose: Whether to print information
+    参数：
+        env_name: 要游玩的环境名称
+        render: 是否进行可视化渲染
+        cell_size: 每格像素大小
+        fps: 渲染的帧率
+        verbose: 是否打印信息
 
-    Returns:
-        Dictionary with episode statistics
+    返回：
+        包含回合统计信息的字典
     """
     # Create environment
     env = create_environment(env_name)
@@ -55,7 +55,7 @@ def play(
 
 
 def main():
-    """Command-line interface for playing Baba Is You."""
+    """用于游玩 Baba Is You 的命令行接口。"""
     parser = argparse.ArgumentParser(
         description="Play Baba Is You interactively",
         formatter_class=argparse.RawDescriptionHelpFormatter,

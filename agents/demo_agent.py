@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple demo agent for Baba Is You that can solve basic levels.
-Uses BFS pathfinding to reach WIN objects, handling pushable objects.
+用于 Baba Is You 的简单演示 Agent，可解基本关卡。
+使用 BFS 寻路以到达 WIN 物体，并能处理可推动（PUSH）的物体。
 """
 
 from collections import deque
@@ -11,58 +11,58 @@ from baba.grid import Grid
 
 
 class DemoAgent(Agent):
-    """Agent that uses BFS pathfinding to reach WIN objects."""
+    """使用 BFS 寻路以接近 WIN 物体的 Agent。"""
 
     def __init__(self):
         super().__init__("Demo Agent")
-        self.path_cache = {}  # Cache paths between episodes
-        self.last_reasoning = ""  # Empty for UI consistency (demo agent doesn't "think")
+        self.path_cache = {}  # 在不同回合之间缓存路径
+        self.last_reasoning = ""  # 为空以保持 UI 一致（demo agent 不“思考”）
 
     def reset(self):
-        """Reset the agent for a new episode."""
+        """为新回合重置 Agent。"""
         self.path_cache = {}
-        self.last_reasoning = ""  # Empty for UI consistency
+        self.last_reasoning = ""  # 为空以保持 UI 一致
 
     def get_action(self, observation: Grid) -> str:
         """
-        Choose action using simplified pathfinding that handles pushable objects.
+        使用可处理可推动物体的简化寻路来选择动作。
 
-        Args:
-            observation: Current game state
+        参数：
+            observation: 当前游戏状态
 
-        Returns:
-            Action to take
+        返回：
+            要执行的动作
         """
-        # Find YOU and WIN objects
+        # 查找 YOU 与 WIN 物体
         you_objects = observation.rule_manager.get_you_objects()
         win_objects = observation.rule_manager.get_win_objects()
 
         if not you_objects:
-            return "wait"  # No controllable objects
+            return "wait"  # 没有可控制的物体
 
-        # Get current positions
+        # 获取当前位置
         you_positions = self._find_you_positions(observation, you_objects)
         win_positions = self._find_win_positions(observation, win_objects)
 
         if not you_positions or not win_positions:
-            return "wait"  # Can't find positions
+            return "wait"  # 找不到位置
 
-        # For simplicity, control the first YOU object
+        # 为简化起见，控制第一个 YOU 物体
         you_pos = you_positions[0]
         target_pos = win_positions[0]
 
-        # Try simple pathfinding with push awareness
+        # 尝试具备推动意识的简化寻路
         action = self._simple_pathfind_with_push(observation, you_pos, target_pos)
 
-        # Keep reasoning empty - demo agent doesn't "think"
+        # 推理留空——演示 Agent 不“思考”
         self.last_reasoning = ""
 
         return action
 
     def _find_you_positions(self, observation: Grid, you_objects: set[str]) -> list:
-        """Find all positions of controllable objects."""
+        """找到所有可控制物体的位置。"""
         positions = []
-        # Convert to lowercase for comparison
+        # 转小写以便比较
         you_objects_lower = {obj.lower() for obj in you_objects}
         for y in range(observation.height):
             for x in range(observation.width):
@@ -72,9 +72,9 @@ class DemoAgent(Agent):
         return positions
 
     def _find_win_positions(self, observation: Grid, win_objects: set[str]) -> list:
-        """Find all positions of win objects."""
+        """找到所有胜利物体的位置。"""
         positions = []
-        # Convert to lowercase for comparison
+        # 转小写以便比较
         win_objects_lower = {obj.lower() for obj in win_objects}
         for y in range(observation.height):
             for x in range(observation.width):
@@ -84,9 +84,9 @@ class DemoAgent(Agent):
         return positions
 
     def _get_push_positions(self, observation: Grid) -> set[tuple[int, int]]:
-        """Get positions of all pushable objects."""
+        """获取所有可推动物体的位置。"""
         push_objects = observation.rule_manager.get_push_objects()
-        # Convert to lowercase for comparison
+        # 转小写以便比较
         push_objects_lower = {obj.lower() for obj in push_objects}
         positions = set()
 
@@ -102,14 +102,14 @@ class DemoAgent(Agent):
         self, observation: Grid, start: tuple[int, int], goal: tuple[int, int]
     ) -> str:
         """
-        Simplified pathfinding that tries to reach goal, pushing objects if needed.
-        Uses local BFS to find immediate next move.
+        简化寻路：在需要时尝试推动物体以抵达目标。
+        使用局部 BFS 以寻找下一步动作。
         """
         # Get object types (convert to lowercase for comparison)
         push_objects = {obj.lower() for obj in observation.rule_manager.get_push_objects()}
         stop_objects = {obj.lower() for obj in observation.rule_manager.get_stop_objects()}
 
-        # BFS for immediate area (depth limited)
+        # 局部 BFS（限制深度）
         queue = deque([(start, [], 0)])
         visited = {start}
         max_local_depth = 10  # Look ahead a few moves
@@ -122,16 +122,16 @@ class DemoAgent(Agent):
             if depth > max_local_depth:
                 continue
 
-            # Check if we reached goal
+            # 检查是否已到达目标
             if pos == goal:
                 return path[0] if path else "wait"
 
-            # Try each direction
+            # 尝试各个方向
             for action, (dx, dy) in directions.items():
                 new_x = pos[0] + dx
                 new_y = pos[1] + dy
 
-                # Check bounds
+                # 边界检查
                 if (
                     new_x < 0
                     or new_x >= observation.width
@@ -140,22 +140,22 @@ class DemoAgent(Agent):
                 ):
                     continue
 
-                # Check what's at the new position
+                # 检查新位置的物体
                 can_move = True
 
                 for obj in observation.grid[new_y][new_x]:
                     if obj.is_text:
                         continue
 
-                    # Check if it's a stop object
+                    # 检查是否为 STOP 物体
                     if obj.name in stop_objects:
-                        # Check if it's also pushable
+                        # 若也可推动则尝试推动
                         if obj.name in push_objects:
-                            # Check if we can push it
+                            # 检查是否能推动
                             push_x = new_x + dx
                             push_y = new_y + dy
 
-                            # Check push bounds
+                            # 推动后的边界检查
                             if (
                                 push_x < 0
                                 or push_x >= observation.width
@@ -165,13 +165,13 @@ class DemoAgent(Agent):
                                 can_move = False
                                 break
 
-                            # Check if push destination is blocked
+                            # 检查推动目的地是否被阻塞
                             for push_obj in observation.grid[push_y][push_x]:
                                 if not push_obj.is_text and push_obj.name in stop_objects:
                                     can_move = False
                                     break
                         else:
-                            # It's STOP but not PUSH
+                            # STOP 且不可推动
                             can_move = False
                             break
 
@@ -179,21 +179,21 @@ class DemoAgent(Agent):
                     visited.add((new_x, new_y))
                     queue.append(((new_x, new_y), path + [action], depth + 1))
 
-        # If no path found with BFS, try direct greedy approach
+        # 若 BFS 未找到路径，则尝试直接的贪心策略
         return self._greedy_move_with_push(observation, start, goal)
 
     def _greedy_move_with_push(
         self, observation: Grid, you_pos: tuple[int, int], goal_pos: tuple[int, int]
     ) -> str:
-        """Greedy movement that considers if we can push objects."""
+        """考虑可推动性的贪心移动。"""
         you_x, you_y = you_pos
         goal_x, goal_y = goal_pos
 
-        # Determine preferred direction
+        # 计算优先方向
         dx = goal_x - you_x
         dy = goal_y - you_y
 
-        # Try horizontal first if it's the longer distance
+        # 若横向距离更长，则优先尝试横向
         if abs(dx) >= abs(dy):
             if dx > 0:
                 action = "right"
@@ -223,11 +223,11 @@ class DemoAgent(Agent):
         new_x = you_x + dx
         new_y = you_y + dy
 
-        # Bounds check
+        # 边界检查
         if new_x < 0 or new_x >= observation.width or new_y < 0 or new_y >= observation.height:
             return "wait"
 
-        # Check if move is valid (considering pushing)
+        # 检查该移动是否有效（考虑推动）
         push_objects = {obj.lower() for obj in observation.rule_manager.get_push_objects()}
         stop_objects = {obj.lower() for obj in observation.rule_manager.get_stop_objects()}
 
@@ -237,7 +237,7 @@ class DemoAgent(Agent):
 
             if obj.name in stop_objects:
                 if obj.name in push_objects:
-                    # Can push - check if push is valid
+                    # 可推动——检查推动是否有效
                     push_x = new_x + dx
                     push_y = new_y + dy
 
@@ -249,33 +249,33 @@ class DemoAgent(Agent):
                     ):
                         return "wait"
 
-                    # Check push destination
+                    # 检查推动目的地
                     for push_obj in observation.grid[push_y][push_x]:
                         if not push_obj.is_text and push_obj.name in stop_objects:
                             return "wait"
                 else:
-                    # Can't push, blocked
+                    # 不可推动，被阻挡
                     return "wait"
 
         return action
 
 
-# Example usage
+# 示例用法
 if __name__ == "__main__":
     import sys
 
     from baba import create_environment
 
-    # Get environment from command line or use default
+    # 从命令行获取环境名或使用默认
     env_name = sys.argv[1] if len(sys.argv) > 1 else "simple"
 
-    # Create environment
+    # 创建环境
     env = create_environment(env_name)
     if not env:
         print(f"Unknown environment: {env_name}")
         sys.exit(1)
 
-    # Create agent and play
+    # 创建 Agent 并开始游玩
     agent = DemoAgent()
     stats = agent.play_episode(env, render=True, verbose=True)
 

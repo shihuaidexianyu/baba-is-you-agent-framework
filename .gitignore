@@ -76,3 +76,6 @@ baba/assets/sprites/*.png
 
 # Local config
 config.local.tomlclaude-code-sdk-python/
+
+
+map/

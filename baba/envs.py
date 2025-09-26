@@ -1,16 +1,15 @@
 """
-Pre-configured game environments for Baba Is You.
+Baba Is You 的预配置关卡环境。
 
-This module provides a collection of ready-to-play levels ranging from
-simple tutorials to complex puzzles. Each environment demonstrates
-different game mechanics and rule interactions.
+该模块提供了一组即玩型关卡，从简单教程到复杂谜题不等。每个环境展示
+不同的游戏机制与规则交互。
 
-Environments are designed to teach and challenge players with:
-- Basic movement and win conditions
-- Push mechanics and obstacle navigation
-- Object transformations
-- Complex rule manipulation
-- Advanced properties like SINK, HOT/MELT, etc.
+这些环境旨在用于教学与挑战，涵盖：
+- 基本移动与胜利条件
+- 推动机制与障碍物绕行
+- 物体变形（Transformation）
+- 复杂规则的拼接与修改
+- 高级属性，如 SINK、HOT/MELT 等
 """
 
 import numpy as np
@@ -21,27 +20,26 @@ from .registration import Registry
 
 class Environment:
     """
-    Base class for Baba Is You environments.
+    Baba Is You 关卡环境的基类。
 
-    Each environment represents a puzzle level with:
-    - Fixed dimensions
-    - Initial object placement
-    - Starting rules (formed by text objects)
+    每个环境代表一个谜题关卡，包含：
+    - 固定尺寸
+    - 初始物体布局
+    - 起始规则（由文字方块拼成）
 
-    Subclasses implement setup() to create specific puzzles.
+    子类需实现 setup() 来构建具体谜题。
     """
 
     def __init__(self, width: int, height: int, name: str = "Custom"):
         """
-        Initialize the environment.
+        初始化环境。
 
-        Creates the grid and registry, then calls setup() to populate
-        the level with objects and rules.
+        创建网格与注册表，然后调用 setup() 将物体与规则放入关卡。
 
-        Args:
-            width: Width of the grid in cells
-            height: Height of the grid in cells
-            name: Display name for this environment
+        参数：
+            width: 网格宽度（单位：格）
+            height: 网格高度（单位：格）
+            name: 环境显示名称
         """
         self.width = width
         self.height = height
@@ -58,26 +56,25 @@ class Environment:
 
     def setup(self):
         """
-        Set up the initial state of the environment.
+        设置环境的初始状态。
 
-        Override this in subclasses to:
-        1. Place game objects (baba, rocks, walls, etc.)
-        2. Place text objects to form rules
-        3. Create the puzzle layout
+        子类应完成：
+        1. 放置游戏物体（baba、rock、wall 等）
+        2. 放置文字方块以拼接规则
+        3. 布局谜题结构
 
-        Called automatically during __init__ and reset().
+        在 __init__ 与 reset() 中会自动调用。
         """
         pass
 
     def reset(self) -> Grid:
         """
-        Reset the environment to its initial state.
+        将环境重置为初始状态。
 
-        Creates a fresh grid and calls setup() again.
-        Used when restarting a level after winning/losing.
+        会重建网格并再次调用 setup()。常用于胜/负后重开关卡。
 
-        Returns:
-            The newly created grid (observation)
+        返回：
+            新创建的网格（观测）
         """
         self.grid = Grid(self.width, self.height, self.registry)
         self.setup()
@@ -89,16 +86,16 @@ class Environment:
 
     def step(self, action: str) -> tuple[Grid, float, bool, dict]:
         """
-        Take a step in the environment (Gym-like API).
+        在环境中执行一步（接口风格类似 Gym）。
 
-        Args:
-            action: One of ["up", "down", "left", "right", "wait"]
+        参数：
+            action: 取值为 ["up", "down", "left", "right", "wait"] 之一
 
-        Returns:
-            observation: Grid object with new state
-            reward: 1.0 if won, -1.0 if lost, 0.0 otherwise
-            done: True if episode is over (won or lost)
-            info: Dictionary with additional information
+        返回：
+            observation: 新状态的 Grid 对象
+            reward: 胜利为 1.0、失败为 -1.0、其他为 0.0
+            done: 若回合结束（胜/负）则为 True
+            info: 额外信息字典
         """
         # Take the action
         won, lost = self.grid.step(action)
@@ -110,10 +107,10 @@ class Environment:
         elif lost:
             reward = -1.0
 
-        # Episode is done if won or lost
+        # 胜/负即视为回合结束
         done = won or lost
 
-        # Additional info
+        # 额外信息
         info = {
             "won": won,
             "lost": lost,
@@ -125,19 +122,19 @@ class Environment:
 
     def render(self, mode: str = "rgb_array", cell_size: int = 24) -> np.ndarray:  # noqa: ARG002
         """
-        Render the current state.
+        渲染当前状态。
 
-        Args:
-            mode: Rendering mode ("rgb_array" returns numpy array)
-            cell_size: Size of each cell in pixels
+        参数：
+            mode: 渲染模式（"rgb_array" 返回 numpy 数组）
+            cell_size: 每格像素大小
 
-        Returns:
-            RGB image as numpy array
+        返回：
+            RGB 图像（numpy 数组）
         """
         return self.grid.render(cell_size)
 
     def get_state(self):
-        """Get the current state."""
+        """获取当前状态。"""
         return self.grid.get_state()
 
 
@@ -146,11 +143,11 @@ class Environment:
 
 class SimpleEnvironment(Environment):
     """
-    Simple test environment with basic rules.
+    具备基础规则的简单测试环境。
 
-    The most basic level - teaches movement and win condition.
-    Layout: Baba on left, flag on right, with rules at top.
-    Goal: Move Baba to the flag.
+    最基础的关卡——教授移动与胜利条件。
+    布局：左侧为 Baba，右侧为旗帜，上方给出规则。
+    目标：将 Baba 移动到旗帜位置。
     """
 
     def __init__(self):
@@ -158,11 +155,11 @@ class SimpleEnvironment(Environment):
 
     def setup(self):
         """
-        Set up a simple level.
+        设置一个简单关卡。
 
-        Creates:
-        - BABA IS YOU (player control)
-        - FLAG IS WIN (objective)
+        创建：
+        - BABA IS YOU（玩家可控制）
+        - FLAG IS WIN（胜利目标）
         """
         # Place Baba
         baba = self.registry.create_instance("baba")
@@ -193,13 +190,13 @@ class SimpleEnvironment(Environment):
 
 
 class WallMazeEnvironment(Environment):
-    """Environment with walls forming a maze."""
+    """由墙体构成迷宫的环境。"""
 
     def __init__(self):
         super().__init__(12, 12, "Wall Maze")
 
     def setup(self):
-        """Set up a maze level."""
+        """设置迷宫关卡。"""
         # Place Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 1, 1)
@@ -232,7 +229,7 @@ class WallMazeEnvironment(Environment):
             wall = self.registry.create_instance("wall")
             self.grid.place_object(wall, x, y)
 
-        # Create rules in a safe area
+    # 在安全区域创建规则
         # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
@@ -262,13 +259,13 @@ class WallMazeEnvironment(Environment):
 
 
 class PushPuzzleEnvironment(Environment):
-    """Environment focused on pushing mechanics."""
+    """聚焦于推动机制的环境。"""
 
     def __init__(self):
         super().__init__(10, 8, "Push Puzzle")
 
     def setup(self):
-        """Set up a pushing puzzle."""
+        """设置推动类谜题。"""
         # Place Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 1, 4)
@@ -297,7 +294,7 @@ class PushPuzzleEnvironment(Environment):
             wall = self.registry.create_instance("wall")
             self.grid.place_object(wall, x, y)
 
-        # Create rules
+    # 创建规则
         # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
@@ -336,18 +333,18 @@ class PushPuzzleEnvironment(Environment):
 
 
 class TransformationEnvironment(Environment):
-    """Environment showcasing object transformation."""
+    """展示物体变形机制的环境。"""
 
     def __init__(self):
         super().__init__(10, 10, "Transformation")
 
     def setup(self):
-        """Set up a transformation puzzle."""
+        """设置变形谜题。"""
         # Place Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 5)
 
-        # Place water (obstacle)
+    # 放置水（障碍）
         water_positions = [(x, 5) for x in range(4, 7)]
         for x, y in water_positions:
             water = self.registry.create_instance("water")
@@ -357,13 +354,13 @@ class TransformationEnvironment(Environment):
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 8, 5)
 
-        # Place rocks (for transformation)
+    # 放置石头（用于变形）
         rock_positions = [(2, 3), (2, 7)]
         for x, y in rock_positions:
             rock = self.registry.create_instance("rock")
             self.grid.place_object(rock, x, y)
 
-        # Create initial rules
+    # 创建初始规则
         # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
@@ -382,7 +379,7 @@ class TransformationEnvironment(Environment):
         self.grid.place_object(is_text2, 7, 1)
         self.grid.place_object(win_text, 8, 1)
 
-        # WATER IS SINK
+    # WATER IS SINK
         water_text = self.registry.create_instance("water", is_text=True)
         is_text3 = self.registry.create_instance("is", is_text=True)
         sink_text = self.registry.create_instance("sink", is_text=True)
@@ -391,14 +388,14 @@ class TransformationEnvironment(Environment):
         self.grid.place_object(is_text3, 2, 9)
         self.grid.place_object(sink_text, 3, 9)
 
-        # ROCK IS (empty - to be filled)
+    # ROCK IS（未完成——待拼接）
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text4 = self.registry.create_instance("is", is_text=True)
 
         self.grid.place_object(rock_text, 6, 9)
         self.grid.place_object(is_text4, 7, 9)
 
-        # BABA text (for transformation rule)
+    # BABA 文字（用于变形规则）
         baba_text2 = self.registry.create_instance("baba", is_text=True)
         self.grid.place_object(baba_text2, 8, 9)
 
@@ -407,13 +404,13 @@ class TransformationEnvironment(Environment):
 
 
 class YouWinEnvironment(Environment):
-    """Simple environment where agent just needs to reach the win object."""
+    """简单环境——只需抵达胜利物体。"""
 
     def __init__(self):
         super().__init__(6, 6, "YouWin")
 
     def setup(self):
-        """Set up a simple you-win level."""
+        """设置一个简单的胜利关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -440,8 +437,8 @@ class YouWinEnvironment(Environment):
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 3, 3)
 
-        # Create rules
-        # BABA IS YOU (unbreakable)
+    # 创建规则
+    # BABA IS YOU（不可破坏）
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -461,13 +458,13 @@ class YouWinEnvironment(Environment):
 
 
 class MakeWinEnvironment(Environment):
-    """Environment where agent needs to create a win rule before winning."""
+    """需要先创建胜利规则才能获胜的环境。"""
 
     def __init__(self):
         super().__init__(8, 8, "MakeWin")
 
     def setup(self):
-        """Set up a make-win level."""
+        """设置“先造胜利再取胜”的关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -489,8 +486,8 @@ class MakeWinEnvironment(Environment):
         rock = self.registry.create_instance("rock")
         self.grid.place_object(rock, 5, 5)
 
-        # Create rules
-        # BABA IS YOU (fixed position)
+    # 创建规则
+    # BABA IS YOU（固定位置）
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -499,12 +496,12 @@ class MakeWinEnvironment(Environment):
         self.grid.place_object(is_text, 2, 1)
         self.grid.place_object(you_text, 3, 1)
 
-        # Broken ROCK IS WIN rule
+    # 残缺的 ROCK IS WIN 规则
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
         win_text = self.registry.create_instance("win", is_text=True)
 
-        # Place them separated so player needs to push them together
+    # 将文字分开放置，迫使玩家推动拼接
         self.grid.place_object(rock_text, 2, 4)
         self.grid.place_object(is_text2, 4, 3)
         self.grid.place_object(win_text, 6, 4)
@@ -520,13 +517,13 @@ class MakeWinEnvironment(Environment):
 
 
 class TwoRoomEnvironment(Environment):
-    """Two-room environment with a dividing wall."""
+    """两间房间，中间有分隔墙的环境。"""
 
     def __init__(self):
         super().__init__(13, 9, "TwoRoom")
 
     def setup(self):
-        """Set up a two-room level."""
+        """设置双房间关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -540,21 +537,21 @@ class TwoRoomEnvironment(Environment):
             self.grid.place_object(wall_left, 0, y)
             self.grid.place_object(wall_right, self.width - 1, y)
 
-        # Place dividing wall
+    # 放置分隔墙
         for y in range(1, self.height - 1):
             if y != 4:  # Leave a gap
                 wall = self.registry.create_instance("wall")
                 self.grid.place_object(wall, 6, y)
 
-        # Place Baba in left room
+    # 左侧房间放置 Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 4)
 
-        # Place flag in right room
+    # 右侧房间放置旗帜
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 10, 4)
 
-        # Create rules in left room
+    # 在左侧房间创建规则
         # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
@@ -584,13 +581,13 @@ class TwoRoomEnvironment(Environment):
 
 
 class TwoRoomBreakStopEnvironment(Environment):
-    """Two-room environment where you need to break WALL IS STOP to pass through."""
+    """两间房间的环境，需要破坏 WALL IS STOP 才能通过。"""
 
     def __init__(self):
         super().__init__(13, 9, "TwoRoomBreakStop")
 
     def setup(self):
-        """Set up a two-room level requiring breaking WALL IS STOP."""
+        """设置需要破坏 WALL IS STOP 的双房间关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -604,21 +601,21 @@ class TwoRoomBreakStopEnvironment(Environment):
             self.grid.place_object(wall_left, 0, y)
             self.grid.place_object(wall_right, self.width - 1, y)
 
-        # Place complete dividing wall (no gap)
+    # 放置完整的分隔墙（无缺口）
         for y in range(1, self.height - 1):
             wall = self.registry.create_instance("wall")
             self.grid.place_object(wall, 6, y)
 
-        # Place Baba in left room
+    # 左侧房间放置 Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 4)
 
-        # Place flag in right room
+    # 右侧房间放置旗帜
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 10, 4)
 
-        # Create rules
-        # BABA IS YOU (fixed)
+    # 创建规则
+    # BABA IS YOU（固定）
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -627,7 +624,7 @@ class TwoRoomBreakStopEnvironment(Environment):
         self.grid.place_object(is_text, 2, 1)
         self.grid.place_object(you_text, 3, 1)
 
-        # FLAG IS WIN (in right room)
+    # FLAG IS WIN（位于右侧房间）
         flag_text = self.registry.create_instance("flag", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
         win_text = self.registry.create_instance("win", is_text=True)
@@ -636,7 +633,7 @@ class TwoRoomBreakStopEnvironment(Environment):
         self.grid.place_object(is_text2, 8, 1)
         self.grid.place_object(win_text, 9, 1)
 
-        # WALL IS STOP (breakable - in left room)
+    # WALL IS STOP（可被破坏——位于左侧房间）
         wall_text = self.registry.create_instance("wall", is_text=True)
         is_text3 = self.registry.create_instance("is", is_text=True)
         stop_text = self.registry.create_instance("stop", is_text=True)
@@ -647,13 +644,13 @@ class TwoRoomBreakStopEnvironment(Environment):
 
 
 class MakeWinWithDistractorsEnvironment(Environment):
-    """Make win environment with distractor objects and rules."""
+    """带有干扰物体与规则的“造胜利”环境。"""
 
     def __init__(self):
         super().__init__(10, 10, "MakeWinDistr")
 
     def setup(self):
-        """Set up a make-win level with distractors."""
+        """设置含干扰项的“先造胜利再取胜”关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -671,19 +668,19 @@ class MakeWinWithDistractorsEnvironment(Environment):
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 2)
 
-        # Place target object (rock)
+    # 放置目标物体（rock）
         rock = self.registry.create_instance("rock")
         self.grid.place_object(rock, 7, 7)
 
-        # Place distractor objects
+    # 放置干扰物体
         water = self.registry.create_instance("water")
         self.grid.place_object(water, 4, 4)
 
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 5, 6)
 
-        # Create rules
-        # BABA IS YOU (fixed)
+    # 创建规则
+    # BABA IS YOU（固定）
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -692,7 +689,7 @@ class MakeWinWithDistractorsEnvironment(Environment):
         self.grid.place_object(is_text, 2, 1)
         self.grid.place_object(you_text, 3, 1)
 
-        # Broken ROCK IS WIN rule
+    # 残缺的 ROCK IS WIN 规则
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
         win_text = self.registry.create_instance("win", is_text=True)
@@ -701,7 +698,7 @@ class MakeWinWithDistractorsEnvironment(Environment):
         self.grid.place_object(is_text2, 5, 3)
         self.grid.place_object(win_text, 8, 5)
 
-        # Distractor rule pieces
+    # 干扰用的规则碎片
         water_text = self.registry.create_instance("water", is_text=True)
         sink_text = self.registry.create_instance("sink", is_text=True)
         push_text = self.registry.create_instance("push", is_text=True)
@@ -721,13 +718,13 @@ class MakeWinWithDistractorsEnvironment(Environment):
 
 
 class GotoWinWithColorEnvironment(Environment):
-    """Environment with colored objects where specific color wins."""
+    """带“颜色”概念的环境（特定颜色可胜利）。"""
 
     def __init__(self):
         super().__init__(8, 8, "GotoWinColor")
 
     def setup(self):
-        """Set up a level with colored objects."""
+        """设置包含“颜色”物体的关卡。"""
         # Place walls around perimeter
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -745,17 +742,17 @@ class GotoWinWithColorEnvironment(Environment):
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 4)
 
-        # Place multiple rocks with different "colors" (positions)
+        # 放置多块带不同“颜色”的石头（用位置代表）
         rock1 = self.registry.create_instance("rock")
-        rock1.color = (255, 0, 0)  # Red
+        rock1.color = (255, 0, 0)  # 红
         self.grid.place_object(rock1, 4, 2)
 
         rock2 = self.registry.create_instance("rock")
-        rock2.color = (0, 255, 0)  # Green
+        rock2.color = (0, 255, 0)  # 绿
         self.grid.place_object(rock2, 5, 4)
 
         rock3 = self.registry.create_instance("rock")
-        rock3.color = (0, 0, 255)  # Blue
+        rock3.color = (0, 0, 255)  # 蓝
         self.grid.place_object(rock3, 4, 6)
 
         # Create rules
@@ -768,7 +765,7 @@ class GotoWinWithColorEnvironment(Environment):
         self.grid.place_object(is_text, 2, 1)
         self.grid.place_object(you_text, 3, 1)
 
-        # ROCK IS WIN (all rocks win for simplicity)
+        # ROCK IS WIN（为简化：所有 rock 都算胜利）
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
         win_text = self.registry.create_instance("win", is_text=True)
@@ -791,13 +788,13 @@ class GotoWinWithColorEnvironment(Environment):
 
 
 class MakeYouEnvironment(Environment):
-    """Environment where you need to create a new YOU rule."""
+    """需要创造新的 YOU 规则的环境。"""
 
     def __init__(self):
         super().__init__(10, 10, "MakeYou")
 
     def setup(self):
-        """Set up a level where you need to make something else YOU."""
+        """设置一个需要让其它物体成为 YOU 的关卡。"""
         # Place walls
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -811,25 +808,25 @@ class MakeYouEnvironment(Environment):
             self.grid.place_object(wall_left, 0, y)
             self.grid.place_object(wall_right, self.width - 1, y)
 
-        # Place horizontal wall barrier
+    # 放置水平墙体作为障碍
         for x in range(1, self.width - 1):
             if x != 5:  # Leave gap
                 wall = self.registry.create_instance("wall")
                 self.grid.place_object(wall, x, 5)
 
-        # Place Baba below barrier
+    # 障碍下方放置 Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 5, 7)
 
-        # Place rock above barrier
+    # 障碍上方放置 rock
         rock = self.registry.create_instance("rock")
         self.grid.place_object(rock, 5, 3)
 
-        # Place flag above barrier
+    # 障碍上方放置旗帜
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 7, 2)
 
-        # BABA IS YOU (can be broken)
+    # BABA IS YOU（可被破坏）
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -838,7 +835,7 @@ class MakeYouEnvironment(Environment):
         self.grid.place_object(is_text, 3, 7)
         self.grid.place_object(you_text, 4, 7)
 
-        # ROCK IS (incomplete - need to add YOU)
+    # ROCK IS（未完成——需补上 YOU）
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
 
@@ -865,13 +862,13 @@ class MakeYouEnvironment(Environment):
 
 
 class TransformPuzzleEnvironment(Environment):
-    """Environment where you need to transform objects to win."""
+    """需要通过物体变形来取胜的环境。"""
 
     def __init__(self):
         super().__init__(10, 10, "TransformPuzzle")
 
     def setup(self):
-        """Set up a transformation puzzle."""
+        """设置一个变形类谜题。"""
         # Place walls
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -885,7 +882,7 @@ class TransformPuzzleEnvironment(Environment):
             self.grid.place_object(wall_left, 0, y)
             self.grid.place_object(wall_right, self.width - 1, y)
 
-        # Place water barrier
+    # 放置水体作为屏障
         for x in range(3, 7):
             water = self.registry.create_instance("water")
             self.grid.place_object(water, x, 5)
@@ -894,14 +891,14 @@ class TransformPuzzleEnvironment(Environment):
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 7)
 
-        # Place rocks (to transform)
+    # 放置石头（用于变形）
         rock1 = self.registry.create_instance("rock")
         self.grid.place_object(rock1, 4, 7)
 
         rock2 = self.registry.create_instance("rock")
         self.grid.place_object(rock2, 5, 7)
 
-        # Place flag (unreachable)
+    # 放置旗帜（初始不可达）
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 5, 2)
 
@@ -939,19 +936,19 @@ class TransformPuzzleEnvironment(Environment):
         self.grid.place_object(rock_text, 6, 8)
         self.grid.place_object(is_text4, 7, 8)
 
-        # Extra BABA text for transformation
+    # 额外的 BABA 文字用于变形
         baba_text2 = self.registry.create_instance("baba", is_text=True)
         self.grid.place_object(baba_text2, 8, 7)
 
 
 class MultiRuleEnvironment(Environment):
-    """Environment with multiple interacting rules."""
+    """包含多条相互作用规则的环境。"""
 
     def __init__(self):
         super().__init__(12, 10, "MultiRule")
 
     def setup(self):
-        """Set up a level with multiple rule interactions."""
+        """设置具有多重规则交互的关卡。"""
         # Place walls
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -965,30 +962,30 @@ class MultiRuleEnvironment(Environment):
             self.grid.place_object(wall_left, 0, y)
             self.grid.place_object(wall_right, self.width - 1, y)
 
-        # Create compartments with walls
+    # 用墙体创建分区
         for y in range(1, 9):
             wall = self.registry.create_instance("wall")
             self.grid.place_object(wall, 4, y)
             wall2 = self.registry.create_instance("wall")
             self.grid.place_object(wall2, 8, y)
 
-        # Place objects in compartments
-        # Left: Baba
+    # 在各分区放置物体
+    # 左区：Baba
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 5)
 
-        # Middle: Rock and Water
+    # 中区：Rock 与 Water
         rock = self.registry.create_instance("rock")
         self.grid.place_object(rock, 6, 3)
 
         water = self.registry.create_instance("water")
         self.grid.place_object(water, 6, 6)
 
-        # Right: Flag
+    # 右区：Flag
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 10, 5)
 
-        # Rules in left compartment
+    # 左区规则
         # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
@@ -998,7 +995,7 @@ class MultiRuleEnvironment(Environment):
         self.grid.place_object(is_text, 2, 2)
         self.grid.place_object(you_text, 3, 2)
 
-        # Rules in middle compartment
+    # 中区规则
         # ROCK IS PUSH
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
@@ -1008,14 +1005,14 @@ class MultiRuleEnvironment(Environment):
         self.grid.place_object(is_text2, 6, 2)
         self.grid.place_object(push_text, 7, 2)
 
-        # WATER IS (incomplete)
+    # WATER IS（未完成）
         water_text = self.registry.create_instance("water", is_text=True)
         is_text3 = self.registry.create_instance("is", is_text=True)
 
         self.grid.place_object(water_text, 5, 7)
         self.grid.place_object(is_text3, 6, 7)
 
-        # Rules in right compartment
+    # 右区规则
         # FLAG IS WIN
         flag_text = self.registry.create_instance("flag", is_text=True)
         is_text4 = self.registry.create_instance("is", is_text=True)
@@ -1025,14 +1022,14 @@ class MultiRuleEnvironment(Environment):
         self.grid.place_object(is_text4, 10, 2)
         self.grid.place_object(win_text, 11, 2)
 
-        # Extra rule pieces scattered
+    # 散落的规则碎片
         stop_text = self.registry.create_instance("stop", is_text=True)
         self.grid.place_object(stop_text, 2, 7)
 
         sink_text = self.registry.create_instance("sink", is_text=True)
         self.grid.place_object(sink_text, 10, 7)
 
-        # WALL IS STOP (fixed)
+    # WALL IS STOP（固定）
         wall_text = self.registry.create_instance("wall", is_text=True)
         is_text5 = self.registry.create_instance("is", is_text=True)
         stop_text2 = self.registry.create_instance("stop", is_text=True)
@@ -1043,13 +1040,13 @@ class MultiRuleEnvironment(Environment):
 
 
 class RuleChainEnvironment(Environment):
-    """Environment requiring a chain of rule manipulations."""
+    """需要进行一系列规则操作的环境。"""
 
     def __init__(self):
         super().__init__(11, 9, "RuleChain")
 
     def setup(self):
-        """Set up a level requiring sequential rule changes."""
+        """设置需要顺序修改规则的关卡。"""
         # Place walls
         for x in range(self.width):
             wall_top = self.registry.create_instance("wall")
@@ -1067,7 +1064,7 @@ class RuleChainEnvironment(Environment):
         baba = self.registry.create_instance("baba")
         self.grid.place_object(baba, 2, 4)
 
-        # Place objects in sequence
+    # 按序放置物体
         rock = self.registry.create_instance("rock")
         self.grid.place_object(rock, 5, 4)
 
@@ -1077,8 +1074,8 @@ class RuleChainEnvironment(Environment):
         flag = self.registry.create_instance("flag")
         self.grid.place_object(flag, 9, 4)
 
-        # Initial rules
-        # BABA IS YOU
+    # 初始规则
+    # BABA IS YOU
         baba_text = self.registry.create_instance("baba", is_text=True)
         is_text = self.registry.create_instance("is", is_text=True)
         you_text = self.registry.create_instance("you", is_text=True)
@@ -1087,7 +1084,7 @@ class RuleChainEnvironment(Environment):
         self.grid.place_object(is_text, 2, 1)
         self.grid.place_object(you_text, 3, 1)
 
-        # ROCK IS STOP
+    # ROCK IS STOP
         rock_text = self.registry.create_instance("rock", is_text=True)
         is_text2 = self.registry.create_instance("is", is_text=True)
         stop_text = self.registry.create_instance("stop", is_text=True)
@@ -1096,7 +1093,7 @@ class RuleChainEnvironment(Environment):
         self.grid.place_object(is_text2, 2, 2)
         self.grid.place_object(stop_text, 3, 2)
 
-        # WATER IS STOP
+    # WATER IS STOP
         water_text = self.registry.create_instance("water", is_text=True)
         is_text3 = self.registry.create_instance("is", is_text=True)
         stop_text2 = self.registry.create_instance("stop", is_text=True)
@@ -1105,14 +1102,14 @@ class RuleChainEnvironment(Environment):
         self.grid.place_object(is_text3, 6, 1)
         self.grid.place_object(stop_text2, 7, 1)
 
-        # FLAG IS (incomplete)
+    # FLAG IS（未完成）
         flag_text = self.registry.create_instance("flag", is_text=True)
         is_text4 = self.registry.create_instance("is", is_text=True)
 
         self.grid.place_object(flag_text, 9, 1)
         self.grid.place_object(is_text4, 10, 1)
 
-        # Scattered rule pieces
+    # 散落的规则碎片
         push_text = self.registry.create_instance("push", is_text=True)
         self.grid.place_object(push_text, 3, 6)
 
@@ -1122,26 +1119,28 @@ class RuleChainEnvironment(Environment):
         sink_text = self.registry.create_instance("sink", is_text=True)
         self.grid.place_object(sink_text, 5, 7)
 
-        # Extra IS
+    # 额外的 IS
         is_text5 = self.registry.create_instance("is", is_text=True)
         self.grid.place_object(is_text5, 6, 6)
 
 
-# Registry of all environments
+"""
+# 全部环境的注册表
+"""
 ENVIRONMENTS = {
-    # Basic environments
+    # 基础环境
     "simple": SimpleEnvironment,
     "wall_maze": WallMazeEnvironment,
     "push_puzzle": PushPuzzleEnvironment,
     "transformation": TransformationEnvironment,
-    # Extended environments
+    # 扩展环境
     "you_win": YouWinEnvironment,
     "make_win": MakeWinEnvironment,
     "two_room": TwoRoomEnvironment,
     "two_room_break_stop": TwoRoomBreakStopEnvironment,
     "make_win_distr": MakeWinWithDistractorsEnvironment,
     "goto_win_color": GotoWinWithColorEnvironment,
-    # Advanced environments
+    # 进阶环境
     "make_you": MakeYouEnvironment,
     "transform_puzzle": TransformPuzzleEnvironment,
     "multi_rule": MultiRuleEnvironment,
@@ -1151,13 +1150,13 @@ ENVIRONMENTS = {
 
 def create_environment(name: str) -> Environment | None:
     """
-    Create an environment by name.
+    通过名称创建环境。
 
-    Args:
-        name: Name of the environment
+    参数：
+        name: 环境名称
 
-    Returns:
-        Environment instance if found, None otherwise
+    返回：
+        找到则返回环境实例，否则返回 None
     """
     env_class = ENVIRONMENTS.get(name.lower())
     if env_class:
@@ -1166,5 +1165,5 @@ def create_environment(name: str) -> Environment | None:
 
 
 def list_environments() -> list[str]:
-    """Get a list of available environment names."""
+    """获取可用的环境名称列表。"""
     return list(ENVIRONMENTS.keys())

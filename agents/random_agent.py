@@ -1,8 +1,8 @@
 """
-Random agent for Baba Is You.
+Baba Is You 的随机 Agent。
 
-This simple agent demonstrates the minimal Agent interface.
-It just picks random actions.
+该简单 Agent 展示了最小化的 Agent 接口用法。
+它只会随机选择动作。
 """
 
 import random
@@ -12,18 +12,18 @@ from baba.grid import Grid
 
 
 class RandomAgent(Agent):
-    """Agent that takes random actions."""
+    """采取随机动作的 Agent。"""
 
     def __init__(self):
         super().__init__("Random Agent")
         self.actions = ["up", "down", "left", "right", "wait"]
 
     def get_action(self, observation: Grid) -> str:  # noqa: ARG002
-        """Pick a random action."""
+        """随机选择一个动作。"""
         return random.choice(self.actions)
 
 
-# Example usage
+# 示例用法
 if __name__ == "__main__":
     from baba import create_environment
 

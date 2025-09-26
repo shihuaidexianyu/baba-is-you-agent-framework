@@ -1,4 +1,4 @@
-"""Main game grid and environment implementation for Baba Is You."""
+"""Baba Is You 的主游戏网格与环境实现。"""
 
 import copy
 
@@ -12,85 +12,85 @@ from .world_object import Object
 
 class Grid:
     """
-    Main game grid that manages objects, rules, and game state.
+    负责管理物体、规则与游戏状态的主游戏网格。
 
-    The Grid is the core data structure that:
-    - Stores objects at each position (multiple objects can stack)
-    - Manages game rules extracted from text objects
-    - Handles object movement, collisions, and transformations
-    - Tracks win/lose conditions
-    - Renders the visual representation
+    核心职责：
+    - 在每个位置存放物体（同一格可堆叠多个物体）
+    - 管理由文字方块提取出的游戏规则
+    - 处理物体移动、碰撞与变形
+    - 追踪胜负状态
+    - 负责渲染
 
-    Key concepts:
-    - Grid coordinates use [y][x] indexing (row, column)
-    - Objects can stack at the same position
-    - Rules are extracted from text objects aligned horizontally/vertically
-    - Movement follows Baba Is You mechanics (push, stop, etc.)
+    关键概念：
+    - 网格坐标使用 [y][x]（行、列）索引
+    - 同一位置可堆叠多个物体
+    - 规则由横/竖排列且无间断的文字方块构成
+    - 移动遵循 Baba Is You 的机制（PUSH、STOP 等）
     """
 
     def __init__(self, width: int, height: int, registry: Registry):
         """
-        Initialize the grid.
+        初始化网格。
 
-        Args:
-            width: Width of the grid
-            height: Height of the grid
-            registry: Object registry
+        参数：
+            width: 网格宽度
+            height: 网格高度
+            registry: 物体注册表
         """
         self.width = width
         self.height = height
         self.registry = registry
 
-        # Grid stores sets of objects at each position
-        # Each cell is a set allowing multiple objects to stack
-        # Indexed as grid[y][x] for row-major order
+    # 网格在每个位置存放一个对象集合
+    # 每个格子为一个 set，允许堆叠多个物体
+    # 采用行优先的 grid[y][x] 索引
         self.grid: list[list[set[Object]]] = [[set() for _ in range(width)] for _ in range(height)]
 
-        # Rule management components
-        # RuleExtractor: Scans grid for text forming rules (e.g., BABA IS YOU)
-        # RuleManager: Stores active rules and answers queries about properties
+    # 规则管理组件
+    # RuleExtractor：扫描网格中文字以形成规则（如 BABA IS YOU）
+    # RuleManager：存储激活的规则并提供属性查询
         self.rule_extractor = RuleExtractor(registry)
         self.rule_manager = RuleManager()
 
-        # Game state tracking
-        self.won = False  # Set when a YOU object touches a WIN object
-        self.lost = False  # Set when no YOU objects exist
-        self.steps = 0  # Total steps taken
+        # 游戏状态追踪
+        self.won = False  # 当任一 YOU 物体触碰 WIN 物体时为 True
+        self.lost = False  # 当不存在 YOU 物体时为 True
+        self.steps = 0  # 累计步数
 
-        # Update rules initially
+        # 初始更新规则
         self._update_rules()
 
     def place_object(self, obj: Object, x: int, y: int):
         """
-        Place an object at a specific position.
+        在指定位置放置一个物体。
 
-        Args:
-            obj: Object to place
-            x, y: Grid coordinates
+        参数：
+            obj: 要放置的物体
+            x, y: 网格坐标
         """
         if 0 <= x < self.width and 0 <= y < self.height:
             self.grid[y][x].add(obj)
 
     def remove_object(self, obj: Object, x: int, y: int):
         """
-        Remove an object from a specific position.
+        在指定位置移除一个物体。
 
-        Args:
-            obj: Object to remove
-            x, y: Grid coordinates
+        参数：
+            obj: 要移除的物体
+            x, y: 网格坐标
         """
         if 0 <= x < self.width and 0 <= y < self.height:
             self.grid[y][x].discard(obj)
 
     def get_objects_at(self, x: int, y: int) -> set[Object]:
         """
-        Get all objects at a specific position.
+        获取某位置上的全部物体。
 
-        Args:
-            x, y: Grid coordinates
+        参数：
+            x, y: 网格坐标
 
-        Returns:
-            Set of objects at the position
+        返回：
+            该位置上的物体集合
         """
         if 0 <= x < self.width and 0 <= y < self.height:
             return self.grid[y][x].copy()
@@ -98,15 +98,15 @@ class Grid:
 
     def move_object(self, obj: Object, from_x: int, from_y: int, to_x: int, to_y: int) -> bool:
         """
-        Move an object from one position to another.
+        将物体从一个位置移动到另一个位置。
 
-        Args:
-            obj: Object to move
-            from_x, from_y: Current position
-            to_x, to_y: Target position
+        参数：
+            obj: 要移动的物体
+            from_x, from_y: 当前坐标
+            to_x, to_y: 目标坐标
 
-        Returns:
-            True if move was successful
+        返回：
+            若移动成功返回 True
         """
         if not (0 <= to_x < self.width and 0 <= to_y < self.height):
             return False
@@ -119,14 +119,14 @@ class Grid:
         self, obj_type: Object | None = None, name: str | None = None
     ) -> list[tuple[Object, int, int]]:
         """
-        Find all objects of a specific type or name.
+        查找指定类型或名称的所有物体。
 
-        Args:
-            obj_type: Object type to find
-            name: Object name to find
+        参数：
+            obj_type: 要查找的物体类型
+            name: 要查找的物体名称
 
-        Returns:
-            List of (object, x, y) tuples
+        返回：
+            (object, x, y) 元组列表
         """
         results = []
         for y in range(self.height):
@@ -145,20 +145,20 @@ class Grid:
 
     def step(self, action: str) -> tuple[bool, bool]:
         """
-        Execute one game step with the given action.
+        按给定动作执行一步游戏逻辑。
 
-        Game step sequence:
-        1. Move all YOU objects in the specified direction
-        2. Re-extract rules from text (movement may have changed them)
-        3. Apply transformations (e.g., ROCK IS BABA)
-        4. Check win/lose conditions
-        5. Handle SINK interactions (destroys overlapping objects)
+        步骤顺序：
+        1. 按方向移动所有具有 YOU 属性的物体
+        2. 重新从文字提取规则（移动可能改变了规则）
+        3. 应用变形（例如 ROCK IS BABA）
+        4. 检查胜/负
+        5. 处理 SINK 交互（销毁重叠的物体）
 
-        Args:
-            action: One of 'up', 'down', 'left', 'right', 'wait'
+        参数：
+            action: 'up' | 'down' | 'left' | 'right' | 'wait'
 
-        Returns:
-            (won, lost) tuple indicating game state
+        返回：
+            (won, lost) 元组表示游戏状态
         """
         self.steps += 1
 
@@ -173,8 +173,8 @@ class Grid:
         elif action == "right":
             dx, dy = 1, 0
 
-        # Move all YOU objects
-        # Note: All objects with YOU property move simultaneously
+        # 移动所有具有 YOU 属性的物体
+        # 注意：所有 YOU 物体同时移动
         if dx != 0 or dy != 0:
             you_objects = self.rule_manager.get_you_objects()
             for obj_name in you_objects:
@@ -182,60 +182,60 @@ class Grid:
                 for obj, x, y in self.find_objects(name=obj_name):
                     self._try_move(obj, x, y, x + dx, y + dy)
 
-        # Update rules after movement
+    # 移动后更新规则
         self._update_rules()
 
-        # Apply transformations
+    # 应用变形
         self._apply_transformations()
 
-        # Check win/lose conditions
+    # 检查胜/负
         self._check_win_lose()
 
-        # Handle sinking
+    # 处理下沉（SINK）
         self._handle_sinking()
 
         return self.won, self.lost
 
     def _try_move(self, obj: Object, from_x: int, from_y: int, to_x: int, to_y: int) -> bool:
         """
-        Try to move an object, handling pushing and blocking.
+        尝试移动某物体，处理推动与阻挡逻辑。
 
-        Movement rules:
-        - Cannot move into STOP objects
-        - PUSH objects can be pushed if there's space
-        - Text objects are always pushable
-        - Pushing chains: pushed objects can push other objects
+        移动规则：
+        - 不能移动进带 STOP 属性的物体
+        - 带 PUSH 属性的物体若目的地有空位即可被推动
+        - 文字方块永远可被推动
+        - 推动链：被推动的物体可以继续推动其他物体
 
-        This method is recursive to handle push chains.
+        本方法为递归实现以支持推动链。
 
-        Args:
-            obj: Object to move
-            from_x, from_y: Current position
-            to_x, to_y: Target position
+        参数：
+            obj: 要移动的物体
+            from_x, from_y: 当前坐标
+            to_x, to_y: 目标坐标
 
-        Returns:
-            True if move was successful
+        返回：
+            若移动成功返回 True
         """
         # Check bounds
         if not (0 <= to_x < self.width and 0 <= to_y < self.height):
             return False
 
-        # Check what's at the target position
+    # 检查目标位置上的内容
         target_objects = self.get_objects_at(to_x, to_y)
 
-        # Check for STOP objects - these block all movement
+        # 检查 STOP 属性——会阻挡一切移动
         for target_obj in target_objects:
             if self.rule_manager.has_property(target_obj.name, Property.STOP):
                 return False
 
-        # Collect pushable objects at target position
-        # Both PUSH property objects and all text are pushable
+        # 收集目标位置上可推动的物体
+        # 带 PUSH 属性的物体与所有文字方块均可推动
         push_objects = []
         for target_obj in target_objects:
             if self.rule_manager.has_property(target_obj.name, Property.PUSH) or target_obj.is_text:
                 push_objects.append(target_obj)
 
-        # If there are objects to push, try to push them
+        # 如存在可推动物体，则尝试推动它们
         if push_objects:
             # Calculate where to push objects (same direction)
             dx = to_x - from_x
@@ -243,41 +243,40 @@ class Grid:
             push_to_x = to_x + dx
             push_to_y = to_y + dy
 
-            # All pushable objects must be able to move for the push to succeed
-            # This creates push chains when objects push other objects
+            # 所有被推动物体都必须能移动，推动才算成功
+            # 这会形成推动链（物体推动物体）
             for push_obj in push_objects:
                 if not self._try_move(push_obj, to_x, to_y, push_to_x, push_to_y):
                     return False
 
-        # Move is valid, execute it
+    # 移动有效，执行移动
         self.move_object(obj, from_x, from_y, to_x, to_y)
         return True
 
     def _update_rules(self):
         """
-        Extract and update active rules from the grid.
+        从网格中提取并更新激活的规则。
 
-        Rules are formed by text objects in patterns like:
-        - NOUN IS PROPERTY (e.g., BABA IS YOU)
-        - NOUN IS NOUN (e.g., ROCK IS BABA)
+        规则由以下模式的文字方块组成：
+        - NOUN IS PROPERTY（如 BABA IS YOU）
+        - NOUN IS NOUN（如 ROCK IS BABA）
 
-        Text must be aligned horizontally or vertically with no gaps.
+        文本需水平或垂直连续对齐且无间隔。
         """
         rules = self.rule_extractor.extract_rules(self.grid)
         self.rule_manager.update_rules(rules)
 
     def _apply_transformations(self):
         """
-        Apply object transformations based on active rules.
+        根据激活规则应用物体变形。
 
-        Transformations occur when rules like "ROCK IS BABA" exist.
-        All ROCK objects immediately transform into BABA objects.
+        当存在类似 "ROCK IS BABA" 的规则时，所有 ROCK 物体会立刻变为 BABA。
 
-        Note: Text objects never transform.
+        注意：文字方块不会发生变形。
         """
         transformations = []
 
-        # Collect all transformations
+        # 收集所有需要变形的项
         for y in range(self.height):
             for x in range(self.width):
                 for obj in list(self.grid[y][x]):  # Copy to avoid modification during iteration
@@ -288,7 +287,7 @@ class Grid:
                         if target_obj:
                             transformations.append((obj, x, y, target_obj))
 
-        # Apply transformations
+        # 应用变形
         for obj, x, y, new_obj in transformations:
             self.remove_object(obj, x, y)
             # Create a new instance of the target object
@@ -297,12 +296,12 @@ class Grid:
 
     def _check_win_lose(self):
         """
-        Check win/lose conditions.
+        检查胜/负条件。
 
-        Win: Any YOU object overlaps with any WIN object
-        Lose: No objects have the YOU property
+        胜利：任一 YOU 物体与任一 WIN 物体重叠
+        失败：不存在具有 YOU 属性的物体
 
-        Note: Once won/lost flags are set, they persist until reset.
+        注意：一旦设置了胜/负标记，将在重置前保持。
         """
         you_objects = self.rule_manager.get_you_objects()
         win_objects = self.rule_manager.get_win_objects()
@@ -311,7 +310,7 @@ class Grid:
             self.lost = True
             return
 
-        # Check if any YOU object is on a WIN object
+        # 检查是否有 YOU 物体处于 WIN 物体所在位置
         for you_name in you_objects:
             for you_obj, you_x, you_y in self.find_objects(name=you_name):
                 # Check all objects at the same position
@@ -322,32 +321,32 @@ class Grid:
 
     def _handle_sinking(self):
         """
-        Handle SINK property interactions.
+        处理 SINK 属性的交互。
 
-        SINK objects destroy everything at their position,
-        including themselves. This happens after movement.
+        具有 SINK 的物体会摧毁其所在位置的所有物体（包括自身）。
+        该处理发生在移动之后。
         """
         sink_objects = self.rule_manager.get_sink_objects()
 
-        # Find all positions with SINK objects
+        # 找出所有包含 SINK 物体的位置
         sink_positions = []
         for sink_name in sink_objects:
             for _, x, y in self.find_objects(name=sink_name):
                 sink_positions.append((x, y))
 
-        # Remove all objects at sink positions
+        # 清空这些位置上的所有物体
         for x, y in sink_positions:
             self.grid[y][x].clear()
 
     def render(self, cell_size: int = 24) -> np.ndarray:
         """
-        Render the grid as an image.
+        将网格渲染为图像。
 
-        Args:
-            cell_size: Size of each cell in pixels
+        参数：
+            cell_size: 每格像素大小
 
-        Returns:
-            Rendered image as numpy array
+        返回：
+            渲染后的 numpy 数组
         """
         # Create dark background
         img = np.full(
@@ -376,9 +375,9 @@ class Grid:
                     x_start = x * cell_size
                     img[y_start : y_start + cell_size, x_start : x_start + cell_size] = sprite
 
-                    # If there are multiple objects, add a small indicator
+                    # 若同格有多个物体，添加角标提示
                     if len(objects) > 1:
-                        # Add a small white dot in corner to indicate stacking
+                        # 在角落画一个小白点表示堆叠
                         cv2.circle(
                             img, (x_start + cell_size - 4, y_start + 4), 2, (255, 255, 255), -1
                         )
@@ -387,13 +386,12 @@ class Grid:
 
     def get_state(self) -> np.ndarray:
         """
-        Get the current state as a 3D array for AI agents.
+        以 3D 数组形式导出当前状态，便于 AI Agent 使用。
 
-        Encodes object type IDs at each position.
-        Limited to max_objects_per_cell objects per position.
+        在每个位置编码物体的类型 ID，最多记录每格的若干个物体。
 
-        Returns:
-            State array of shape (height, width, max_objects_per_cell)
+        返回：
+            形状为 (height, width, max_objects_per_cell) 的数组
         """
         max_objects_per_cell = 3  # Adjust as needed
         state = np.zeros((self.height, self.width, max_objects_per_cell), dtype=np.int32)
@@ -407,7 +405,7 @@ class Grid:
         return state
 
     def reset(self):
-        """Reset the grid to empty state."""
+        """将网格重置为空状态。"""
         self.grid = [[set() for _ in range(self.width)] for _ in range(self.height)]
         self.won = False
         self.lost = False
@@ -415,7 +413,7 @@ class Grid:
         self._update_rules()
 
     def copy(self) -> "Grid":
-        """Create a deep copy of the grid."""
+        """创建该网格的深拷贝。"""
         new_grid = Grid(self.width, self.height, self.registry)
 
         # Copy all objects
